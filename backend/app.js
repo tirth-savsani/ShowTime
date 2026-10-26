@@ -10,6 +10,9 @@ import { notFound } from './middlewares/notFound.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import movieRoutes from './routes/movie.routes.js';
+import theatreRoutes from './routes/theatre.routes.js';
+import { getCities } from './controllers/theatre.controller.js';
 
 const app = express();
 
@@ -82,8 +85,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// 10. API Route Mounts
+// 10. API Route Mounts (Spec B8)
 app.use('/api/auth', authRoutes);
+app.use('/api/movies', movieRoutes);
+app.use('/api/theatres', theatreRoutes);
+app.get('/api/cities', getCities);
 app.use('/api/admin', adminRoutes);
 
 // 11. 404 Handler for undefined routes

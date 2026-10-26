@@ -9,10 +9,18 @@ export const validate = (schema) => async (req, res, next) => {
       params: req.params,
     });
 
-    // Replace request parts with sanitized/transformed output from Zod
-    if (parsed.body !== undefined) req.body = parsed.body;
-    if (parsed.query !== undefined) req.query = parsed.query;
-    if (parsed.params !== undefined) req.params = parsed.params;
+    // Replace request parts with sanitized/transformed output from Zod (Express 5 in-place compatibility)
+    if (parsed.body !== undefined && req.body && typeof req.body === 'object') {
+      Object.assign(req.body, parsed.body);
+    }
+    if (parsed.query !== undefined && req.query && typeof req.query === 'object') {
+      for (const key of Object.keys(parsed.query)) {
+        req.query[key] = parsed.query[key];
+      }
+    }
+    if (parsed.params !== undefined && req.params && typeof req.params === 'object') {
+      Object.assign(req.params, parsed.params);
+    }
 
     next();
   } catch (error) {
