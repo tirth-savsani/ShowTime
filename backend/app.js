@@ -8,6 +8,8 @@ import { globalLimiter } from './middlewares/rateLimiter.js';
 import { sanitize } from './middlewares/sanitize.js';
 import { notFound } from './middlewares/notFound.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import authRoutes from './routes/auth.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 const app = express();
 
@@ -80,8 +82,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// 10. API Route Mounts (Placeholders to be expanded in subsequent tasks)
-// e.g. app.use('/api/auth', authRoutes);
+// 10. API Route Mounts
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 11. 404 Handler for undefined routes
 app.use(notFound);

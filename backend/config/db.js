@@ -3,6 +3,10 @@ import { env } from './env.js';
 
 export const connectDB = async (uri = env.dbURL) => {
   try {
+    if (mongoose.connection.readyState === 1) {
+      return mongoose.connection;
+    }
+
     if (!uri) {
       throw new Error('Database connection URL (dbURL) is not defined in environment variables.');
     }
