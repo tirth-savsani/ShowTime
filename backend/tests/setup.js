@@ -11,6 +11,7 @@ process.env.CLOUDINARY_API_KEY = 'mock_api_key';
 process.env.CLOUDINARY_API_SECRET = 'mock_api_secret';
 process.env.RAZORPAY_KEY_ID = 'rzp_test_mockkey';
 process.env.RAZORPAY_KEY_SECRET = 'mock_secret_key';
+process.env.RAZORPAY_WEBHOOK_SECRET = 'mock_webhook_secret';
 
 let replSet = null;
 

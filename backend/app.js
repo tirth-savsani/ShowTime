@@ -13,6 +13,8 @@ import adminRoutes from './routes/admin.routes.js';
 import movieRoutes from './routes/movie.routes.js';
 import theatreRoutes from './routes/theatre.routes.js';
 import showRoutes from './routes/show.routes.js';
+import bookingRoutes from './routes/booking.routes.js';
+import { handleWebhook } from './controllers/payment.controller.js';
 import { getCities } from './controllers/theatre.controller.js';
 
 const app = express();
@@ -49,14 +51,11 @@ if (env.NODE_ENV !== 'test') {
   app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
-// 5. Razorpay Webhook Raw Route Placeholder (BEFORE json parser as required by Spec B8)
+// 5. Razorpay Webhook Raw Route (BEFORE json parser as required by Spec B8)
 app.post(
   '/api/payments/webhook',
   express.raw({ type: 'application/json' }),
-  (req, res, next) => {
-    // Placeholder handler - to be completed in Payment task
-    res.status(200).json({ received: true });
-  }
+  handleWebhook
 );
 
 // 6. Parsers and Sanitization
@@ -91,6 +90,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/theatres', theatreRoutes);
 app.use('/api/shows', showRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.get('/api/cities', getCities);
 app.use('/api/admin', adminRoutes);
 

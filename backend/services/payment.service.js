@@ -1,2 +1,111 @@
-// Placeholder according to Spec B2
-export default {};
+import crypto from 'crypto';
+import razorpayInstance from '../config/razorpay.js';
+import { env } from '../config/env.js';
+import AppError from '../utils/AppError.js';
+import { REFUND_STATUSES } from '../config/constants.js';
+
+/**
+ * Creates an order in Razorpay (Spec B6.4, B6.9)
+ * Amount must be integer in paise
+ */
+export const createOrder = async (amountInPaise, receipt, notes = {}) => {
+  try {
+    const options = {
+      amount: Math.round(amountInPaise),
+      currency: 'INR',
+      receipt: String(receipt).slice(0, 40),
+      notes,
+    };
+    const order = await razorpayInstance.orders.create(options);
+    return order;
+  } catch (err) {
+    throw new AppError(
+      'Payment provider error while creating order',
+      502,
+      'PAYMENT_PROVIDER_ERROR',
+      null,
+      { originalError: err.message }
+    );
+  }
+};
+
+/**
+ * Verifies Razorpay checkout signature using HMAC SHA256 and constant-time comparison (Spec B6.5)
+ */
+export const verifySignature = (orderId, paymentId, signature) => {
+  const secret = process.env.RAZORPAY_KEY_SECRET || env.RAZORPAY_KEY_SECRET;
+  if (!orderId || !paymentId || !signature || !secret) {
+    return false;
+  }
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest('hex');
+
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  const signatureBuf = Buffer.from(signature, 'utf8');
+
+  if (expectedBuf.length !== signatureBuf.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
+};
+
+/**
+ * Verifies Razorpay webhook signature (Spec B6.9)
+ */
+export const verifyWebhookSignature = (rawBody, signature) => {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET || env.RAZORPAY_WEBHOOK_SECRET;
+  if (!rawBody || !signature || !secret) {
+    return false;
+  }
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  const signatureBuf = Buffer.from(signature, 'utf8');
+
+  if (expectedBuf.length !== signatureBuf.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuf, signatureBuf);
+};
+
+/**
+ * Refunds a captured payment (Spec B6.6)
+ */
+export const refund = async (paymentId, amountInPaise, notes = {}) => {
+  try {
+    const refundRes = await razorpayInstance.payments.refund(paymentId, {
+      amount: Math.round(amountInPaise),
+      notes,
+    });
+    return {
+      id: refundRes.id,
+      amount: refundRes.amount ? Math.round(refundRes.amount / 100) : Math.round(amountInPaise / 100),
+      status: refundRes.status ? String(refundRes.status).toUpperCase() : REFUND_STATUSES.PROCESSED,
+      at: new Date(),
+    };
+  } catch (err) {
+    return {
+      id: null,
+      amount: Math.round(amountInPaise / 100),
+      status: REFUND_STATUSES.FAILED,
+      at: new Date(),
+      error: err.message,
+    };
+  }
+};
+
+export default {
+  createOrder,
+  verifySignature,
+  verifyWebhookSignature,
+  refund,
+};
