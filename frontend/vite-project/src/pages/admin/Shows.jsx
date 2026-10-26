@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Calendar,
   Plus,
   Trash2,
-  Film,
-  Building2,
   Clock,
-  IndianRupee,
   AlertTriangle,
-  Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../../api/admin.api.js';

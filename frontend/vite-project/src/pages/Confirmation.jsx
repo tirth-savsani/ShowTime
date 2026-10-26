@@ -4,12 +4,7 @@ import {
   CheckCircle2,
   Printer,
   Home,
-  Film,
-  Calendar,
-  Clock,
-  MapPin,
   QrCode,
-  AlertCircle,
   Loader2,
   Ticket as TicketIcon,
 } from 'lucide-react';

@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Clock,
   ChevronLeft,
   ShieldCheck,
-  CreditCard,
   AlertTriangle,
   Loader2,
   Film,
-  Ticket,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import bookingsApi from '../api/bookings.api.js';
@@ -18,7 +16,6 @@ import { clearBookingFlow, setBookingId } from '../store/slices/bookingSlice.js'
 import loadRazorpayScript from '../utils/loadRazorpay.js';
 import Button from '../components/common/Button.jsx';
 import Modal from '../components/common/Modal.jsx';
-import ErrorState from '../components/common/ErrorState.jsx';
 
 export const Checkout = () => {
   const { showId } = useParams();
@@ -31,7 +28,6 @@ export const Checkout = () => {
 
   // Local states
   const [showDetails, setShowDetails] = useState(null);
-  const [loadingShow, setLoadingShow] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
@@ -52,10 +48,7 @@ export const Checkout = () => {
           setShowDetails(data?.show || null);
         }
       })
-      .catch(() => {})
-      .finally(() => {
-        if (isMounted) setLoadingShow(false);
-      });
+      .catch(() => {});
 
     return () => {
       isMounted = false;

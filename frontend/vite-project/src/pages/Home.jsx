@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { MapPin, Film, Sparkles } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import moviesApi from '../api/movies.api.js';
 import { openCityModal } from '../store/slices/citySlice.js';
 import HeroCarousel from '../components/movie/HeroCarousel.jsx';

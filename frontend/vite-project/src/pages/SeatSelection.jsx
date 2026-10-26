@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   ChevronLeft,
   Pencil,
-  AlertCircle,
   Loader2,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import showsApi from '../api/shows.api.js';
@@ -21,8 +18,9 @@ import SeatCountModal from '../components/seat/SeatCountModal.jsx';
 import SeatItem from '../components/seat/SeatItem.jsx';
 import ScreenGraphic from '../components/seat/ScreenGraphic.jsx';
 import Button from '../components/common/Button.jsx';
-import Skeleton from '../components/common/Skeleton.jsx';
 import ErrorState from '../components/common/ErrorState.jsx';
+
+const EMPTY_SEAT_IDS = [];
 
 export const SeatSelection = () => {
   const { showId } = useParams();
@@ -31,7 +29,7 @@ export const SeatSelection = () => {
 
   const bookingState = useSelector((state) => state.booking);
   const seatCount = bookingState.seatCount || 2;
-  const selectedSeatIds = bookingState.selectedSeatIds || [];
+  const selectedSeatIds = bookingState.selectedSeatIds || EMPTY_SEAT_IDS;
 
   // Local state
   const [seatMapData, setSeatMapData] = useState(null);
@@ -41,7 +39,9 @@ export const SeatSelection = () => {
   const [isCountModalOpen, setIsCountModalOpen] = useState(!bookingState.seatCount);
 
   const selectedSeatIdsRef = useRef(selectedSeatIds);
-  selectedSeatIdsRef.current = selectedSeatIds;
+  useEffect(() => {
+    selectedSeatIdsRef.current = selectedSeatIds;
+  }, [selectedSeatIds]);
 
   // Sync Redux showId
   useEffect(() => {

@@ -4,10 +4,6 @@ import {
   Ticket,
   Calendar,
   TrendingUp,
-  Percent,
-  Film,
-  Building2,
-  Tv,
   Loader2,
 } from 'lucide-react';
 import adminApi from '../../api/admin.api.js';

@@ -39,7 +39,7 @@ export const SearchBar = ({ className = '' }) => {
         setResults(movies);
         setIsOpen(true);
         setSelectedIndex(-1);
-      } catch (err) {
+      } catch {
         setResults([]);
       } finally {
         setLoading(false);

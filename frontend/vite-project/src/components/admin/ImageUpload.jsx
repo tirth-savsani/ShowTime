@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { UploadCloud, X, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
 
 export const ImageUpload = ({
   label,

@@ -1,33 +1,35 @@
 import React, { useMemo } from 'react';
+ 
+const generate7Days = () => {
+  const list = [];
+  const base = new Date();
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const isoDate = `${year}-${month}-${day}`;
+
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const monthStr = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+
+    list.push({
+      isoDate,
+      dayNumber: day,
+      weekday,
+      month: monthStr,
+      isToday: i === 0,
+    });
+  }
+  return list;
+};
 
 export const DateStrip = ({ selectedDate, onSelectDate, className = '' }) => {
   // Generate 7 consecutive dates starting from today
-  const dates = useMemo(() => {
-    const list = [];
-    const base = new Date();
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const isoDate = `${year}-${month}-${day}`;
-
-      const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-      const monthStr = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-
-      list.push({
-        isoDate,
-        dayNumber: day,
-        weekday,
-        month: monthStr,
-        isToday: i === 0,
-      });
-    }
-    return list;
-  }, []);
+  const dates = useMemo(() => generate7Days(), []);
 
   return (
     <div

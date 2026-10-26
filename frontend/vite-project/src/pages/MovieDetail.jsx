@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   Play,
   Calendar,
@@ -8,17 +8,16 @@ import {
   ExternalLink,
   Ticket,
   AlertCircle,
-  Sparkles,
   User,
 } from 'lucide-react';
 import moviesApi from '../api/movies.api.js';
 import Button from '../components/common/Button.jsx';
 import Skeleton from '../components/common/Skeleton.jsx';
-import TrailerModal, { getYoutubeEmbedUrl } from '../components/movie/TrailerModal.jsx';
+import TrailerModal from '../components/movie/TrailerModal.jsx';
+import getYoutubeEmbedUrl from '../utils/youtube.js';
 
 export const MovieDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);

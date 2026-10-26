@@ -2,12 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
   Ticket,
-  Calendar,
-  Clock,
-  MapPin,
-  AlertCircle,
-  ExternalLink,
-  Ban,
   Film,
   Loader2,
 } from 'lucide-react';
@@ -26,7 +20,7 @@ export const MyBookings = () => {
   const tab = searchParams.get('tab') || 'upcoming';
 
   const [bookings, setBookings] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const [_pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 

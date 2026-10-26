@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { User, Ticket, Shield, LogOut, ChevronDown } from 'lucide-react';
+import { Ticket, Shield, LogOut, ChevronDown } from 'lucide-react';
 import { logoutUser } from '../../store/slices/authSlice.js';
 
 export const UserMenu = ({ user }) => {

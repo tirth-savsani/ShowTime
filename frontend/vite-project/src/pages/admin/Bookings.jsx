@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Ticket,
   Search,
   Eye,
   Ban,
-  Clock,
-  QrCode,
-  User,
-  AlertCircle,
-  IndianRupee,
-  Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../../api/admin.api.js';

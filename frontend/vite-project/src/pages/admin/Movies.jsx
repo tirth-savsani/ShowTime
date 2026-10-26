@@ -4,11 +4,7 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Search,
-  AlertCircle,
-  Loader2,
   X,
-  ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../../api/admin.api.js';
@@ -74,7 +70,7 @@ export const Movies = () => {
       const data = res?.data || res;
       setMovies(data?.items || []);
       setPagination(data?.pagination || { page: 1, limit: 10, total: 0, pages: 1 });
-    } catch (err) {
+    } catch {
       toast.error('Failed to load movies.');
     } finally {
       setLoading(false);

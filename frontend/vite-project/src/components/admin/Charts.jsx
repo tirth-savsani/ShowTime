@@ -231,4 +231,4 @@ export const BarChart = ({ data = [], height = 220 }) => {
   );
 };
 
-export default { LineChart, BarChart };
+

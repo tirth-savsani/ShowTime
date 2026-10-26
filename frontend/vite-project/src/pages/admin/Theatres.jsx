@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Building2,
   Plus,
   Pencil,
   Power,
   MapPin,
-  Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../../api/admin.api.js';

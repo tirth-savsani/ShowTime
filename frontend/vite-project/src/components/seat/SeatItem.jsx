@@ -12,7 +12,6 @@ export const SeatItem = ({
   const isBooked = seat.status === 'BOOKED';
   const isHeldByOther = seat.status === 'HELD';
   const isMine = seat.status === 'MINE';
-  const isAvailable = seat.status === 'AVAILABLE' || isMine;
 
   const isDisabled = isBooked || isHeldByOther;
 

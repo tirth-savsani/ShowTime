@@ -5,8 +5,6 @@ import {
   ChevronRight,
   MapPin,
   Clock,
-  Film,
-  Sparkles,
   Coffee,
   Smartphone,
   Calendar,
@@ -21,21 +19,21 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import ErrorState from '../components/common/ErrorState.jsx';
 import Skeleton from '../components/common/Skeleton.jsx';
 
+// Today in YYYY-MM-DD
+const getTodayIso = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const Shows = () => {
   const { id: movieId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
 
   const { selected: selectedCity } = useSelector((state) => state.city);
-
-  // Today in YYYY-MM-DD
-  const getTodayIso = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   const selectedDate = searchParams.get('date') || getTodayIso();
 

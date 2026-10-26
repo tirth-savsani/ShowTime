@@ -1,14 +1,14 @@
 import React from 'react';
 import { Filter, X, ChevronDown } from 'lucide-react';
 
-export const PRICE_RANGES = [
+const PRICE_RANGES = [
   { id: 'all', label: 'All Prices' },
   { id: 'under_200', label: 'Under ₹200' },
   { id: '200_350', label: '₹200 - ₹350' },
   { id: 'above_350', label: 'Above ₹350' },
 ];
 
-export const TIME_RANGES = [
+const TIME_RANGES = [
   { id: 'all', label: 'All Showtimes' },
   { id: 'morning', label: 'Morning (Before 12 PM)' },
   { id: 'afternoon', label: 'Afternoon (12 PM - 4 PM)' },

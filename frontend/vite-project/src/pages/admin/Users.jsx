@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { Users as UsersIcon, Power, Shield, ShieldCheck, Search } from 'lucide-react';
+import { Power, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../../api/admin.api.js';
 import DataTable from '../../components/admin/DataTable.jsx';

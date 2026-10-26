@@ -31,8 +31,8 @@ export const Screens = () => {
       const data = res?.data || res;
       const list = Array.isArray(data) ? data : data?.items || [];
       setTheatres(list);
-      if (list.length > 0 && !selectedTheatreId) {
-        setSelectedTheatreId(list[0].id || list[0]._id);
+      if (list.length > 0) {
+        setSelectedTheatreId((prev) => prev || list[0].id || list[0]._id);
       }
     });
   }, []);

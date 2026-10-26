@@ -13,10 +13,8 @@ import {
   ExternalLink,
   Menu,
   X,
-  Shield,
 } from 'lucide-react';
 import { logoutUser } from '../../store/slices/authSlice.js';
-import Button from '../common/Button.jsx';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/admin', icon: LayoutDashboard, end: true },

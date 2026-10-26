@@ -76,7 +76,6 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
   const formats = Array.isArray(currentMovie.formats)
     ? currentMovie.formats.join(' • ')
     : currentMovie.formats || '2D';
-  const backdrop = currentMovie.backdropUrl || currentMovie.posterUrl;
 
   return (
     <div

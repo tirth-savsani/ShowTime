@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+const currentYear = new Date().getFullYear();
+
 export const Footer = () => {
   return (
     <footer className="bg-navy text-gray-300 pt-12 pb-8 mt-auto border-t border-navy-light text-sm">
@@ -70,7 +72,7 @@ export const Footer = () => {
             Disclaimer: ShowTime is a demonstration movie ticket booking web application. All transactions operate in test mode.
           </p>
           <p>
-            © {new Date().getFullYear()} ShowTime Entertainment Pvt. Ltd. All Rights Reserved.
+            © {currentYear} ShowTime Entertainment Pvt. Ltd. All Rights Reserved.
           </p>
         </div>
       </div>
