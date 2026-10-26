@@ -5,14 +5,14 @@ export const bookingsApi = {
     api.post('/api/bookings/checkout', { showId }),
   verifyPayment: (payload) =>
     api.post('/api/bookings/verify', payload),
-  markFailed: (payload) =>
-    api.post('/api/bookings/failed', payload),
+  markFailed: (id, reason = 'Payment dismissed by user') =>
+    api.post(`/api/bookings/${id}/failed`, { reason }),
   getMyBookings: (params = {}) =>
     api.get('/api/bookings/my', { params }),
   getBookingById: (id) =>
     api.get(`/api/bookings/${id}`),
-  cancelBooking: (id) =>
-    api.patch(`/api/bookings/${id}/cancel`),
+  cancelBooking: (id, reason = 'Customer cancelled') =>
+    api.post(`/api/bookings/${id}/cancel`, { reason }),
 };
 
 export default bookingsApi;
