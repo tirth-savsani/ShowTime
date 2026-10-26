@@ -1,6 +1,536 @@
 {
   "info": {
-    "name": "ShowTime API"
+    "name": "ShowTime API",
+    "_postman_id": "c1f7a28e-showtime-api-collection-v1",
+    "description": "ShowTime — BookMyShow-style movie ticket booking REST API. Comprehensive collection covering Public, User, and Admin workflows with example request bodies and environment variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "item": []
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8084",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns 200 OK with server uptime, environment, and ISO timestamp."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePass@123\",\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@showtime.test\",\n  \"password\": \"Demo@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User (/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Catalogue",
+      "item": [
+        {
+          "name": "List Movies (with filters & search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/movies?city=Bengaluru&genre=Sci-Fi&format=IMAX&search=Echoes&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "movies"],
+              "query": [
+                { "key": "city", "value": "Bengaluru" },
+                { "key": "genre", "value": "Sci-Fi" },
+                { "key": "format", "value": "IMAX" },
+                { "key": "search", "value": "Echoes" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Movie Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/movies/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "movies", ":id"],
+              "variable": [{ "key": "id", "value": "670d10000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "List Active Cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cities",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cities"]
+            }
+          }
+        },
+        {
+          "name": "List Theatres by City",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/theatres?city=Bengaluru",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "theatres"],
+              "query": [{ "key": "city", "value": "Bengaluru" }]
+            }
+          }
+        },
+        {
+          "name": "Get Theatre by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/theatres/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "theatres", ":id"],
+              "variable": [{ "key": "id", "value": "670d20000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Get Movie Shows by City & Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/movies/:id/shows?city=Bengaluru&date=2026-10-28",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "movies", ":id", "shows"],
+              "query": [
+                { "key": "city", "value": "Bengaluru" },
+                { "key": "date", "value": "2026-10-28" }
+              ],
+              "variable": [{ "key": "id", "value": "670d10000000000000000001" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seat Map & Holds",
+      "item": [
+        {
+          "name": "Get Seat Map for Show",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shows/:id/seats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shows", ":id", "seats"],
+              "variable": [{ "key": "id", "value": "670d30000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Hold Seats (Atomic)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [\"A1\", \"A2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shows/:id/hold",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shows", ":id", "hold"],
+              "variable": [{ "key": "id", "value": "670d30000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Release Held Seats",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shows/:id/hold",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shows", ":id", "hold"],
+              "variable": [{ "key": "id", "value": "670d30000000000000000001" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings & Payments",
+      "item": [
+        {
+          "name": "Checkout (Create Pending Booking & Razorpay Order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"showId\": \"670d30000000000000000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/checkout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "checkout"]
+            }
+          }
+        },
+        {
+          "name": "Verify Payment & Confirm Booking",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"670d40000000000000000001\",\n  \"razorpayOrderId\": \"order_mock_123456\",\n  \"razorpayPaymentId\": \"pay_mock_123456\",\n  \"razorpaySignature\": \"9e4a3b7...sha256...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Mark Booking Failed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"670d40000000000000000001\",\n  \"reason\": \"PAYMENT_FAILED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/failed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "failed"]
+            }
+          }
+        },
+        {
+          "name": "List My Bookings (tabs: upcoming, past, cancelled)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/my?tab=upcoming&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "my"],
+              "query": [
+                { "key": "tab", "value": "upcoming" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id"],
+              "variable": [{ "key": "id", "value": "670d40000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking (User Refund)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/:id/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", ":id", "cancel"],
+              "variable": [{ "key": "id", "value": "670d40000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Razorpay Webhook Handler",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-razorpay-signature", "value": "mock_signature_hash" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"pay_mock_123\",\n        \"order_id\": \"order_mock_123\",\n        \"status\": \"captured\",\n        \"amount\": 70000\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "webhook"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/stats?days=14",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "stats"],
+              "query": [{ "key": "days", "value": "14" }]
+            }
+          }
+        },
+        {
+          "name": "List All Bookings (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/bookings?status=CONFIRMED&page=1&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "bookings"],
+              "query": [
+                { "key": "status", "value": "CONFIRMED" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "12" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking (Admin Force Refund)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/bookings/:id/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "bookings", ":id", "cancel"],
+              "variable": [{ "key": "id", "value": "670d40000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "List Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?search=demo&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                { "key": "search", "value": "demo" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User Status (Activate/Deactivate)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/:id/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", ":id", "status"],
+              "variable": [{ "key": "id", "value": "670d50000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Admin Movies List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "movies"]
+            }
+          }
+        },
+        {
+          "name": "Create Movie (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Apex Predator\",\n  \"description\": \"A high-octane survival thriller in the deep Pacific trench.\",\n  \"genres\": [\"Action\", \"Thriller\"],\n  \"languages\": [\"English\", \"Hindi\"],\n  \"formats\": [\"2D\", \"3D\"],\n  \"durationMin\": 120,\n  \"releaseDate\": \"2026-11-20\",\n  \"certificate\": \"UA\",\n  \"posterUrl\": \"https://images.unsplash.com/photo-1534447677768-be436bb09401\",\n  \"posterPublicId\": \"showtime/movies/apex_poster\",\n  \"status\": \"now_showing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "movies"]
+            }
+          }
+        },
+        {
+          "name": "Soft Delete Movie",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/movies/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "movies", ":id"],
+              "variable": [{ "key": "id", "value": "670d10000000000000000001" }]
+            }
+          }
+        },
+        {
+          "name": "Create Theatre (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nexus Cinema\",\n  \"city\": \"Bengaluru\",\n  \"address\": \"Koramangala 7th Block, Bengaluru 560095\",\n  \"amenities\": [\"Dolby Atmos\", \"Parking\", \"Cafeteria\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/theatres",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "theatres"]
+            }
+          }
+        },
+        {
+          "name": "Create Screen (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"theatre\": \"670d20000000000000000001\",\n  \"name\": \"Audi 3\",\n  \"layout\": {\n    \"rows\": [\n      { \"label\": \"A\", \"seatCount\": 8, \"category\": \"PLATINUM\", \"aisleAfter\": [4] },\n      { \"label\": \"B\", \"seatCount\": 12, \"category\": \"GOLD\", \"aisleAfter\": [6] }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/screens",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "screens"]
+            }
+          }
+        },
+        {
+          "name": "Create Show (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movie\": \"670d10000000000000000001\",\n  \"screen\": \"670d60000000000000000001\",\n  \"startTime\": \"2026-10-30T10:00:00.000Z\",\n  \"language\": \"English\",\n  \"format\": \"2D\",\n  \"pricing\": {\n    \"PLATINUM\": 350,\n    \"GOLD\": 250,\n    \"SILVER\": 150\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/shows",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "shows"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Show (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/shows/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "shows", ":id"],
+              "variable": [{ "key": "id", "value": "670d30000000000000000001" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
 }
