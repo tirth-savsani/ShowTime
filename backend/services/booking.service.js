@@ -490,6 +490,58 @@ export const handleWebhook = async (rawBody, signature) => {
   return { received: true };
 };
 
+/**
+ * Admin: list all bookings with filters and pagination (Spec B4, B6.11)
+ * Filters: movie (ObjectId), status, email, dateFrom, dateTo
+ */
+export const listAdminBookings = async ({
+  movie,
+  status,
+  email,
+  dateFrom,
+  dateTo,
+  page = 1,
+  limit = DEFAULT_PAGE_LIMIT,
+} = {}) => {
+  const filter = {};
+
+  if (movie) filter['snapshot.movieId'] = new mongoose.Types.ObjectId(movie);
+  if (status) filter.status = status;
+
+  if (dateFrom || dateTo) {
+    filter.createdAt = {};
+    if (dateFrom) filter.createdAt.$gte = new Date(`${dateFrom}T00:00:00.000Z`);
+    if (dateTo) filter.createdAt.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+  }
+
+  // Filter by user email requires a join — resolve user IDs first
+  if (email) {
+    const User = (await import('../models/User.js')).default;
+    const users = await User.find({ email: new RegExp(email, 'i') }).select('_id').lean();
+    filter.user = { $in: users.map((u) => u._id) };
+  }
+
+  const [total, bookings] = await Promise.all([
+    Booking.countDocuments(filter),
+    Booking.find(filter)
+      .populate('user', 'name email phone')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+  ]);
+
+  return {
+    bookings,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 1,
+    },
+  };
+};
+
 export default {
   checkout,
   verifyAndConfirm,
@@ -498,4 +550,5 @@ export default {
   getBookingById,
   cancelBooking,
   handleWebhook,
+  listAdminBookings,
 };

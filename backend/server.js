@@ -1,6 +1,7 @@
 import { validateEnv, env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import app from './app.js';
+import { startAllJobs } from './jobs/index.js';
 
 // Validate all required environment variables at boot
 validateEnv();
@@ -14,6 +15,9 @@ const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
+
+    // Start background cron jobs (Spec B6.10)
+    startAllJobs();
 
     // Start listening on 0.0.0.0:PORT
     server = app.listen(PORT, HOST, () => {
