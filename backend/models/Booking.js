@@ -89,9 +89,9 @@ const bookingSchema = new mongoose.Schema(
       default: null,
     },
     razorpay: {
-      orderId: { type: String, default: null },
-      paymentId: { type: String, default: null },
-      signature: { type: String, default: null },
+      orderId: { type: String },
+      paymentId: { type: String },
+      signature: { type: String },
     },
     refund: {
       id: { type: String, default: null },
@@ -141,7 +141,10 @@ const bookingSchema = new mongoose.Schema(
 // bookingRef unique index defined in field schema
 bookingSchema.index({ user: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ show: 1, status: 1 });
-bookingSchema.index({ 'razorpay.orderId': 1 }, { unique: true, sparse: true });
+bookingSchema.index(
+  { 'razorpay.orderId': 1 },
+  { unique: true, sparse: true, partialFilterExpression: { 'razorpay.orderId': { $type: 'string' } } }
+);
 bookingSchema.index({ status: 1, expiresAt: 1 });
 
 export const Booking = mongoose.model('Booking', bookingSchema);

@@ -58,6 +58,9 @@ const showSchema = new mongoose.Schema(
     toJSON: {
       transform(doc, ret) {
         ret.id = ret._id.toString();
+        if (ret.pricing instanceof Map) {
+          ret.pricing = Object.fromEntries(ret.pricing);
+        }
         delete ret._id;
         delete ret.__v;
         return ret;
@@ -66,6 +69,9 @@ const showSchema = new mongoose.Schema(
     toObject: {
       transform(doc, ret) {
         ret.id = ret._id.toString();
+        if (ret.pricing instanceof Map) {
+          ret.pricing = Object.fromEntries(ret.pricing);
+        }
         delete ret._id;
         delete ret.__v;
         return ret;

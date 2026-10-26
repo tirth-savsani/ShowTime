@@ -21,6 +21,13 @@ import {
 import * as movieController from '../controllers/movie.controller.js';
 import * as theatreController from '../controllers/theatre.controller.js';
 import * as screenController from '../controllers/screen.controller.js';
+import * as showController from '../controllers/show.controller.js';
+import {
+  createShowSchema,
+  updateShowSchema,
+  listAdminShowsQuerySchema,
+  cancelShowSchema,
+} from '../validators/show.validator.js';
 import { sendSuccess } from '../views/response.js';
 
 const router = Router();
@@ -86,6 +93,28 @@ router.put(
   validate(idParamSchema),
   validate(updateScreenSchema),
   screenController.updateScreen
+);
+
+// Admin Shows (Spec B4)
+router.get(
+  '/shows',
+  validate(listAdminShowsQuerySchema),
+  showController.getAdminShows
+);
+router.post(
+  '/shows',
+  validate(createShowSchema),
+  showController.createShow
+);
+router.put(
+  '/shows/:id',
+  validate(updateShowSchema),
+  showController.updateShow
+);
+router.delete(
+  '/shows/:id',
+  validate(cancelShowSchema),
+  showController.cancelShow
 );
 
 export default router;

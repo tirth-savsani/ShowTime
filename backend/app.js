@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import movieRoutes from './routes/movie.routes.js';
 import theatreRoutes from './routes/theatre.routes.js';
+import showRoutes from './routes/show.routes.js';
 import { getCities } from './controllers/theatre.controller.js';
 
 const app = express();
@@ -89,6 +90,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/theatres', theatreRoutes);
+app.use('/api/shows', showRoutes);
 app.get('/api/cities', getCities);
 app.use('/api/admin', adminRoutes);
 
