@@ -19,7 +19,14 @@ const Login = lazy(() => import('../pages/Login.jsx'));
 const Register = lazy(() => import('../pages/Register.jsx'));
 const NotFound = lazy(() => import('../pages/NotFound.jsx'));
 import AccessDenied from '../pages/AccessDenied.jsx';
+const AdminLayout = lazy(() => import('../components/admin/AdminLayout.jsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard.jsx'));
+const AdminMovies = lazy(() => import('../pages/admin/Movies.jsx'));
+const AdminTheatres = lazy(() => import('../pages/admin/Theatres.jsx'));
+const AdminScreens = lazy(() => import('../pages/admin/Screens.jsx'));
+const AdminShows = lazy(() => import('../pages/admin/Shows.jsx'));
+const AdminBookings = lazy(() => import('../pages/admin/Bookings.jsx'));
+const AdminUsers = lazy(() => import('../pages/admin/Users.jsx'));
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex flex-col items-center justify-center p-8">
@@ -60,18 +67,26 @@ export const AppRoutes = () => {
             }
           />
 
-          {/* Admin Protected Routes */}
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
-
           {/* 404 Catch-All */}
           <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {/* Admin Protected Routes with Dedicated AdminLayout */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="movies" element={<AdminMovies />} />
+          <Route path="theatres" element={<AdminTheatres />} />
+          <Route path="screens" element={<AdminScreens />} />
+          <Route path="shows" element={<AdminShows />} />
+          <Route path="bookings" element={<AdminBookings />} />
+          <Route path="users" element={<AdminUsers />} />
         </Route>
 
         {/* Minimal Layout Routes (Seats & Checkout) */}
