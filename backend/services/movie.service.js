@@ -47,7 +47,7 @@ export const listMovies = async ({
   }
 
   // Filter movies playing in city (Spec B4: movies that have at least one future scheduled show in that city)
-  if (city && city.trim() !== '') {
+  if (city && city.trim() !== '' && status !== MOVIE_STATUSES.COMING_SOON) {
     const normalisedCity = toTitleCase(city);
     // Find all movie IDs with future scheduled shows in that city
     const ShowModel = mongoose.models.Show || mongoose.model('Show');

@@ -1,69 +1,164 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
-import { Film, Sparkles, ChevronRight } from 'lucide-react';
-import Button from '../components/common/Button.jsx';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { MapPin, Film, Sparkles } from 'lucide-react';
+import moviesApi from '../api/movies.api.js';
+import { openCityModal } from '../store/slices/citySlice.js';
+import HeroCarousel from '../components/movie/HeroCarousel.jsx';
+import MovieRow from '../components/movie/MovieRow.jsx';
+import EmptyState from '../components/common/EmptyState.jsx';
+import ErrorState from '../components/common/ErrorState.jsx';
 
 export const Home = () => {
+  const dispatch = useDispatch();
   const { selected: selectedCity } = useSelector((state) => state.city);
 
+  const [featuredMovies, setFeaturedMovies] = useState([]);
+  const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [comingSoonMovies, setComingSoonMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchHomeData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Fetch featured movies (for hero carousel)
+      // 2. Fetch now showing movies (filtered by selected city)
+      // 3. Fetch coming soon movies
+      const [featuredRes, recommendedRes, comingSoonRes] = await Promise.all([
+        moviesApi.getFeaturedMovies({ city: selectedCity || undefined }).catch(() => ({ items: [] })),
+        moviesApi.getMovies({
+          status: 'now_showing',
+          city: selectedCity || undefined,
+          limit: 10,
+        }),
+        moviesApi.getMovies({
+          status: 'coming_soon',
+          limit: 10,
+        }),
+      ]);
+
+      const featuredList = Array.isArray(featuredRes)
+        ? featuredRes
+        : featuredRes?.items || [];
+      const recommendedList = Array.isArray(recommendedRes)
+        ? recommendedRes
+        : recommendedRes?.items || [];
+      const comingSoonList = Array.isArray(comingSoonRes)
+        ? comingSoonRes
+        : comingSoonRes?.items || [];
+
+      // If featured is empty, fallback to first few recommended movies with backdrops/posters
+      setFeaturedMovies(
+        featuredList.length > 0 ? featuredList : recommendedList.slice(0, 5)
+      );
+      setRecommendedMovies(recommendedList);
+      setComingSoonMovies(comingSoonList);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to load movies. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCity]);
+
+  useEffect(() => {
+    fetchHomeData();
+  }, [fetchHomeData]);
+
   return (
-    <div className="space-y-10 pb-16">
-      {/* Hero Welcome Banner */}
-      <section className="bg-gradient-to-r from-navy via-navy-light to-navy text-white py-14 sm:py-20">
-        <div className="container mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-semibold mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ShowTime Cinema Experience</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight max-w-2xl mb-4">
-            Movie Magic in <span className="text-primary">{selectedCity || 'Your City'}</span>
-          </h1>
-          <p className="text-sm sm:text-base text-gray-300 max-w-lg mb-8">
-            Explore the latest blockbusters, choose your preferred seats with atomic locking, and book seamlessly with Razorpay.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link to="/explore/movies">
-              <Button variant="primary" size="lg" className="gap-2">
-                <Film className="w-4 h-4" />
-                Explore Movies
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-8 sm:space-y-12 pb-16">
+      {/* 1. Hero Carousel */}
+      <div className="container mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
+        <HeroCarousel movies={featuredMovies} loading={loading} />
+      </div>
 
-      {/* Feature Pillars */}
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-md shadow-card border border-border">
-            <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold mb-3">
-              01
-            </div>
-            <h3 className="text-base font-bold text-ink mb-1">Atomic 5-Min Seat Hold</h3>
-            <p className="text-xs text-muted leading-relaxed">
-              No double booking. Real-time distributed seat locking ensures your chosen seats are strictly reserved while checking out.
-            </p>
-          </div>
+      <div className="container mx-auto px-4 sm:px-6 space-y-10">
+        {/* Error Handling with Retry */}
+        {error ? (
+          <ErrorState
+            title="Unable to load movies"
+            message={error}
+            onRetry={fetchHomeData}
+          />
+        ) : (
+          <>
+            {/* 2. Recommended Movies Section */}
+            {loading ? (
+              <MovieRow
+                title="Recommended Movies"
+                subtitle={selectedCity ? `In ${selectedCity}` : 'In Theatres Now'}
+                seeAllLink="/explore/movies?tab=now_showing"
+                loading={true}
+              />
+            ) : recommendedMovies.length > 0 ? (
+              <MovieRow
+                title="Recommended Movies"
+                subtitle={selectedCity ? `Playing in ${selectedCity}` : 'In Theatres Now'}
+                seeAllLink="/explore/movies?tab=now_showing"
+                movies={recommendedMovies}
+              />
+            ) : (
+              /* Empty state if no movies are playing in the selected city */
+              <EmptyState
+                icon={MapPin}
+                title={`No movies playing in ${selectedCity || 'this city'} right now`}
+                hint="Check back soon or switch your city to browse current showtimes and theatres."
+                actionLabel="Change City"
+                onAction={() => dispatch(openCityModal())}
+                className="bg-white rounded-lg border border-border py-12"
+              />
+            )}
 
-          <div className="bg-white p-6 rounded-md shadow-card border border-border">
-            <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold mb-3">
-              02
-            </div>
-            <h3 className="text-base font-bold text-ink mb-1">Razorpay Verified Payments</h3>
-            <p className="text-xs text-muted leading-relaxed">
-              Cryptographic server-side HMAC signature verification protects your payments with instant e-tickets and QR codes.
-            </p>
-          </div>
+            {/* 3. Coming Soon Row */}
+            <MovieRow
+              title="Coming Soon"
+              subtitle="Exciting upcoming releases to add to your watchlist"
+              seeAllLink="/explore/movies?tab=coming_soon"
+              movies={comingSoonMovies}
+              loading={loading}
+            />
+          </>
+        )}
 
-          <div className="bg-white p-6 rounded-md shadow-card border border-border">
-            <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold mb-3">
-              03
+        {/* Feature Highlights Banner */}
+        <div className="pt-6 border-t border-border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-md shadow-card border border-border flex items-start gap-4">
+              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">
+                01
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-ink mb-1">Atomic 5-Min Seat Hold</h4>
+                <p className="text-xs text-muted leading-relaxed">
+                  Real-time distributed seat locking ensures zero double-booking while you complete checkout.
+                </p>
+              </div>
             </div>
-            <h3 className="text-base font-bold text-ink mb-1">Live Multi-City Schedules</h3>
-            <p className="text-xs text-muted leading-relaxed">
-              Seamlessly browse theatres, screen layouts, audio formats (IMAX, 4DX, Dolby), and accurate pricing across India.
-            </p>
+
+            <div className="bg-white p-6 rounded-md shadow-card border border-border flex items-start gap-4">
+              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">
+                02
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-ink mb-1">Razorpay Verified Payments</h4>
+                <p className="text-xs text-muted leading-relaxed">
+                  Cryptographic HMAC signature verification with instant e-tickets and QR access.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-md shadow-card border border-border flex items-start gap-4">
+              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center font-bold text-sm flex-shrink-0">
+                03
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-ink mb-1">Multi-City Cinema Discovery</h4>
+                <p className="text-xs text-muted leading-relaxed">
+                  Find theatres, IMAX 3D, 4DX, and real-time seating availability across India.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

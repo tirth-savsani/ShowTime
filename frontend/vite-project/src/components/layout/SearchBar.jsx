@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Search, Film, Loader2 } from 'lucide-react';
 import moviesApi from '../../api/movies.api.js';
 
 export const SearchBar = ({ className = '' }) => {
+  const { selected: selectedCity } = useSelector((state) => state.city);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ export const SearchBar = ({ className = '' }) => {
         const response = await moviesApi.getMovies({
           search: query.trim(),
           limit: 6,
-          status: 'now_showing',
+          city: selectedCity || undefined,
         });
         // Response is unwrapped by axios interceptor (either array or { items })
         const movies = Array.isArray(response)
@@ -45,7 +47,7 @@ export const SearchBar = ({ className = '' }) => {
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, selectedCity]);
 
   // Click outside listener
   useEffect(() => {
