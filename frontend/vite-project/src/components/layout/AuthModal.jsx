@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Modal from '../common/Modal.jsx';
-import Button from '../common/Button.jsx';
+import AuthForm from './AuthForm.jsx';
 import {
   closeAuthModal,
   setAuthModalMode,
@@ -16,21 +17,8 @@ export const AuthModal = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { authModal, status, error, redirectTo } = useSelector(
-    (state) => state.auth
-  );
-
-  const [loginForm, setLoginForm] = useState({
-    email: '',
-    password: '',
-  });
-
-  const [registerForm, setRegisterForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-  });
+  const { authModal, status, redirectTo } = useSelector((state) => state.auth);
+  const [formServerError, setFormServerError] = useState(null);
 
   const isLogin = authModal.mode === 'login';
   const isLoading = status === 'loading';
@@ -38,31 +26,45 @@ export const AuthModal = () => {
   const handleClose = () => {
     dispatch(closeAuthModal());
     dispatch(clearAuthError());
+    setFormServerError(null);
   };
 
   const handleToggleMode = () => {
     dispatch(clearAuthError());
+    setFormServerError(null);
     dispatch(setAuthModalMode(isLogin ? 'register' : 'login'));
   };
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    const result = await dispatch(loginUser(loginForm));
-    if (loginUser.fulfilled.match(result)) {
-      if (redirectTo) {
-        navigate(redirectTo);
-        dispatch(clearRedirectTo());
-      }
-    }
-  };
+  const handleSubmit = async (payload, onServerError) => {
+    setFormServerError(null);
+    dispatch(clearAuthError());
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    const result = await dispatch(registerUser(registerForm));
-    if (registerUser.fulfilled.match(result)) {
+    const action = isLogin ? loginUser(payload) : registerUser(payload);
+    const result = await dispatch(action);
+
+    if (loginUser.fulfilled.match(result) || registerUser.fulfilled.match(result)) {
+      const user = result.payload;
+      toast.success(`Welcome, ${user?.name || 'User'}!`);
+      handleClose();
+
+      // Redirect after login (Spec: redirect-after-login uses authSlice.redirectTo; clear it after use)
       if (redirectTo) {
-        navigate(redirectTo);
+        const dest = redirectTo;
         dispatch(clearRedirectTo());
+        navigate(dest);
+      }
+    } else if (result.payload) {
+      const err = result.payload;
+      // Handle form-level error (e.g. INVALID_CREDENTIALS)
+      if (err.code === 'INVALID_CREDENTIALS' || err.status === 401) {
+        setFormServerError('Invalid email address or password.');
+      } else if (err.code !== 'EMAIL_EXISTS' && !err.errors) {
+        setFormServerError(err.message || 'Authentication failed. Please try again.');
+      }
+
+      // Delegate field-level mapping (including EMAIL_EXISTS) to the form
+      if (onServerError) {
+        onServerError(err);
       }
     }
   };
@@ -71,166 +73,16 @@ export const AuthModal = () => {
     <Modal
       isOpen={authModal.open}
       onClose={handleClose}
-      title={isLogin ? 'Welcome Back to ShowTime' : 'Create ShowTime Account'}
-      maxWidth="max-w-md"
+      title={isLogin ? 'Sign in to ShowTime' : 'Create an Account'}
+      maxWidth="max-w-[420px]" // Spec C6: Modal 420px
     >
-      <div className="space-y-4">
-        {/* Error Banner */}
-        {error && (
-          <div className="p-3 text-xs text-danger bg-red-50 border border-red-200 rounded-xs">
-            {error}
-          </div>
-        )}
-
-        {isLogin ? (
-          /* Login Form */
-          <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={loginForm.email}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, email: e.target.value })
-                }
-                placeholder="you@example.com"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                value={loginForm.password}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, password: e.target.value })
-                }
-                placeholder="••••••••"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isLoading}
-              className="w-full mt-2"
-            >
-              Sign In
-            </Button>
-          </form>
-        ) : (
-          /* Register Form */
-          <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={registerForm.name}
-                onChange={(e) =>
-                  setRegisterForm({ ...registerForm, name: e.target.value })
-                }
-                placeholder="Jane Doe"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={registerForm.email}
-                onChange={(e) =>
-                  setRegisterForm({ ...registerForm, email: e.target.value })
-                }
-                placeholder="you@example.com"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Password (min 8 characters)
-              </label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={registerForm.password}
-                onChange={(e) =>
-                  setRegisterForm({ ...registerForm, password: e.target.value })
-                }
-                placeholder="At least 8 characters"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">
-                Phone Number (optional)
-              </label>
-              <input
-                type="tel"
-                value={registerForm.phone}
-                onChange={(e) =>
-                  setRegisterForm({ ...registerForm, phone: e.target.value })
-                }
-                placeholder="10-digit mobile"
-                className="w-full h-11 px-3 text-sm bg-white border border-border rounded-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-ink"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isLoading}
-              className="w-full mt-2"
-            >
-              Create Account
-            </Button>
-          </form>
-        )}
-
-        {/* Toggle Mode */}
-        <div className="pt-2 text-center text-xs text-muted border-t border-border">
-          {isLogin ? (
-            <p>
-              New to ShowTime?{' '}
-              <button
-                type="button"
-                onClick={handleToggleMode}
-                className="text-primary font-bold hover:underline cursor-pointer ml-1"
-              >
-                Create an account
-              </button>
-            </p>
-          ) : (
-            <p>
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={handleToggleMode}
-                className="text-primary font-bold hover:underline cursor-pointer ml-1"
-              >
-                Sign in here
-              </button>
-            </p>
-          )}
-        </div>
-      </div>
+      <AuthForm
+        mode={authModal.mode}
+        onSubmit={handleSubmit}
+        onToggleMode={handleToggleMode}
+        isLoading={isLoading}
+        serverError={formServerError}
+      />
     </Modal>
   );
 };

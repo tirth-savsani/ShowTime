@@ -1,24 +1,83 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { openAuthModal } from '../store/slices/authSlice.js';
+import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import AuthForm from '../components/layout/AuthForm.jsx';
+import {
+  loginUser,
+  clearAuthError,
+  clearRedirectTo,
+} from '../store/slices/authSlice.js';
 
 export const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, status } = useSelector((state) => state.auth);
 
+  const { user, status, redirectTo } = useSelector((state) => state.auth);
+  const [formServerError, setFormServerError] = useState(null);
+
+  // If already authenticated, redirect to home (Spec C6)
   useEffect(() => {
     if (status === 'authenticated' && user) {
-      navigate('/');
-    } else {
-      dispatch(openAuthModal('login'));
+      navigate('/', { replace: true });
     }
-  }, [user, status, dispatch, navigate]);
+  }, [user, status, navigate]);
+
+  const handleSubmit = async (payload, onServerError) => {
+    setFormServerError(null);
+    dispatch(clearAuthError());
+
+    const result = await dispatch(loginUser(payload));
+
+    if (loginUser.fulfilled.match(result)) {
+      const loggedUser = result.payload;
+      toast.success(`Welcome, ${loggedUser?.name || 'User'}!`);
+
+      // Redirect-after-login uses authSlice.redirectTo; clear it after use (Spec C2, Task 10)
+      if (redirectTo) {
+        const dest = redirectTo;
+        dispatch(clearRedirectTo());
+        navigate(dest, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } else if (result.payload) {
+      const err = result.payload;
+      if (err.code === 'INVALID_CREDENTIALS' || err.status === 401) {
+        setFormServerError('Invalid email address or password.');
+      } else if (!err.errors) {
+        setFormServerError(err.message || 'Login failed. Please check your credentials.');
+      }
+
+      if (onServerError) {
+        onServerError(err);
+      }
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-20 text-center">
-      <p className="text-sm text-muted">Opening Sign In dialog...</p>
+    <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[70vh]">
+      <div className="w-full max-w-[420px] bg-white rounded-lg shadow-card border border-border p-6 sm:p-8">
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-block focus:outline-none mb-3">
+            <span className="text-2xl font-black text-primary tracking-tight uppercase">
+              Show<span className="text-ink">Time</span>
+            </span>
+          </Link>
+          <h1 className="text-xl font-bold text-ink">Sign in to your account</h1>
+          <p className="text-xs text-muted mt-1">
+            Access your bookings, e-tickets, and fast checkout
+          </p>
+        </div>
+
+        <AuthForm
+          mode="login"
+          onSubmit={handleSubmit}
+          onToggleMode={() => navigate('/register')}
+          isLoading={status === 'loading'}
+          serverError={formServerError}
+        />
+      </div>
     </div>
   );
 };
