@@ -9,15 +9,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const requiredEnvVars = [
-  'NODE_ENV',
-  'PORT',
   'dbURL',
   'JWT_SECRET',
-  'JWT_EXPIRES_IN',
-  'CLIENT_URL',
-  'CLOUDINARY_CLOUD_NAME',
-  'CLOUDINARY_API_KEY',
-  'CLOUDINARY_API_SECRET',
   'RAZORPAY_KEY_ID',
   'RAZORPAY_KEY_SECRET',
 ];
@@ -28,13 +21,19 @@ export const validateEnv = () => {
     return;
   }
 
+  // Populate safe production/development defaults for optional configurations
+  process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+  process.env.PORT = process.env.PORT || '8084';
+  process.env.JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
+  process.env.CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
   const missing = requiredEnvVars.filter((varName) => !process.env[varName] || process.env[varName].trim() === '');
 
   if (missing.length > 0) {
     console.error('\n======================================================');
     console.error('FATAL: Missing required environment variables:');
     missing.forEach((v) => console.error(`  - ${v}`));
-    console.error('Please check your .env file against .env.example.');
+    console.error('Please check your environment configuration or .env file.');
     console.error('======================================================\n');
     process.exit(1);
   }

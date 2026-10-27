@@ -25,21 +25,40 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // 3. CORS configuration with allow-list
-const allowedOrigins = [
-  env.CLIENT_URL,
+const rawClientUrls = (env.CLIENT_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  ...rawClientUrls,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-].filter(Boolean);
+]);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/$/, '');
+      try {
+        const urlObj = new URL(cleanOrigin);
+        if (
+          allowedOrigins.has(cleanOrigin) ||
+          urlObj.hostname.endsWith('.vercel.app')
+        ) {
+          return callback(null, true);
+        }
+      } catch {
+        // Fall back to direct comparison if URL constructor throws
+        if (allowedOrigins.has(cleanOrigin)) {
+          return callback(null, true);
+        }
       }
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+
+      return callback(null, false);
     },
     credentials: true,
   })
