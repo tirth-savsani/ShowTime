@@ -40,16 +40,6 @@ export const getShowById = catchAsync(async (req, res) => {
   });
 });
 
-export const getAdminShows = catchAsync(async (req, res) => {
-  const result = await showService.listAdminShows(req.query);
-  return sendList(res, {
-    statusCode: 200,
-    message: 'Shows fetched successfully',
-    items: result.items.map(formatShow),
-    pagination: result.pagination,
-  });
-});
-
 export const getMovieShows = catchAsync(async (req, res) => {
   const { date, city } = req.query;
   const data = await showService.listByMovie(req.params.id, { date, city });
@@ -65,6 +55,5 @@ export default {
   updateShow,
   cancelShow,
   getShowById,
-  getAdminShows,
   getMovieShows,
 };

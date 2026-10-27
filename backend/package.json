@@ -9,8 +9,7 @@
     "dev": "nodemon server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
     "test:ci": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit --ci",
-    "seed": "node seed/seedAll.js",
-    "seed:admin": "node seed/seedAdmin.js"
+    "seed": "node seed/seedAll.js"
   },
   "keywords": [
     "showtime",

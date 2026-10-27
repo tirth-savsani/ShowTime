@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../app.js';
 import { User } from '../models/User.js';
-import { COOKIE_NAME, USER_ROLES } from '../config/constants.js';
+import { COOKIE_NAME } from '../config/constants.js';
 import bcrypt from 'bcryptjs';
 
 describe('Auth Module (Task 2)', () => {
@@ -19,7 +19,6 @@ describe('Auth Module (Task 2)', () => {
       email: validUser.email.toLowerCase(),
       passwordHash,
       phone: validUser.phone,
-      role: USER_ROLES.USER,
       isActive: true,
       ...overrides,
     });
@@ -36,7 +35,6 @@ describe('Auth Module (Task 2)', () => {
       expect(res.body.data.user).toBeDefined();
       expect(res.body.data.user.email).toBe(validUser.email.toLowerCase());
       expect(res.body.data.user.name).toBe(validUser.name);
-      expect(res.body.data.user.role).toBe(USER_ROLES.USER);
       expect(res.body.data.user.passwordHash).toBeUndefined();
 
       // Check httpOnly cookie
@@ -203,7 +201,7 @@ describe('Auth Module (Task 2)', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.user.email).toBe(validUser.email.toLowerCase());
-      expect(res.body.data.user.role).toBe(USER_ROLES.USER);
+      expect(res.body.data.user.name).toBe(validUser.name);
     });
 
     it('returns 403 ACCOUNT_DISABLED if user was deactivated after token was issued', async () => {
@@ -241,60 +239,6 @@ describe('Auth Module (Task 2)', () => {
       const tokenCookie = cookies.find((c) => c.startsWith(`${COOKIE_NAME}=`));
       expect(tokenCookie).toBeDefined();
       expect(tokenCookie).toMatch(/(expires=|Max-Age=0)/i);
-    });
-  });
-
-  describe('Role-based Authorization (/api/admin route)', () => {
-    it('regular user accessing admin-only route returns 403 FORBIDDEN', async () => {
-      await createTestUser();
-
-      const loginRes = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: validUser.email,
-          password: validUser.password,
-        });
-
-      const cookie = loginRes.headers['set-cookie'];
-
-      const res = await request(app)
-        .get('/api/admin/test')
-        .set('Cookie', cookie);
-
-      expect(res.status).toBe(403);
-      expect(res.body.success).toBe(false);
-      expect(res.body.code).toBe('FORBIDDEN');
-    });
-
-    it('admin user accessing admin-only route returns 200', async () => {
-      const adminEmail = 'admin.tester@showtime.test';
-      const adminPassword = 'AdminPassword@123';
-      const hash = await bcrypt.hash(adminPassword, 10);
-
-      await User.create({
-        name: 'Admin Tester',
-        email: adminEmail,
-        passwordHash: hash,
-        role: USER_ROLES.ADMIN,
-        isActive: true,
-      });
-
-      const loginRes = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: adminEmail,
-          password: adminPassword,
-        });
-
-      const cookie = loginRes.headers['set-cookie'];
-
-      const res = await request(app)
-        .get('/api/admin/test')
-        .set('Cookie', cookie);
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.message).toBe('Admin authorized access');
     });
   });
 });

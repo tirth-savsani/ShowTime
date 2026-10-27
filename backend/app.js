@@ -9,7 +9,6 @@ import { sanitize } from './middlewares/sanitize.js';
 import { notFound } from './middlewares/notFound.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import authRoutes from './routes/auth.routes.js';
-import adminRoutes from './routes/admin.routes.js';
 import movieRoutes from './routes/movie.routes.js';
 import theatreRoutes from './routes/theatre.routes.js';
 import showRoutes from './routes/show.routes.js';
@@ -92,7 +91,6 @@ app.use('/api/theatres', theatreRoutes);
 app.use('/api/shows', showRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.get('/api/cities', getCities);
-app.use('/api/admin', adminRoutes);
 
 // 11. 404 Handler for undefined routes
 app.use(notFound);

@@ -13,7 +13,6 @@ export const SHOW_ADS_MINUTES = 15;
 export const PENDING_BOOKING_EXPIRY_MINUTES = 10;
 export const FILLING_FAST_THRESHOLD = 0.30;
 export const BOOKING_WINDOW_DAYS_PUBLIC = 7;
-export const BOOKING_WINDOW_DAYS_ADMIN = 30;
 export const JWT_EXPIRES_IN = '7d';
 export const COOKIE_NAME = 'token';
 export const DEFAULT_PAGE_LIMIT = 12;
@@ -24,7 +23,6 @@ export const CURRENCY = 'INR';
 
 export const USER_ROLES = {
   USER: 'user',
-  ADMIN: 'admin',
 };
 
 export const MOVIE_STATUSES = {
@@ -56,7 +54,6 @@ export const REFUND_STATUSES = {
 
 export const CANCEL_REASONS = {
   USER: 'USER',
-  ADMIN: 'ADMIN',
   SEATS_LOST: 'SEATS_LOST',
   SHOW_CANCELLED: 'SHOW_CANCELLED',
 };

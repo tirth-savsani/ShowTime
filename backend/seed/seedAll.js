@@ -28,7 +28,6 @@ import { Booking } from '../models/Booking.js';
 import { moviesData } from './data/movies.js';
 import { theatresData } from './data/theatres.js';
 import {
-  USER_ROLES,
   MOVIE_STATUSES,
   SHOW_STATUSES,
   SHOW_ADS_MINUTES,
@@ -89,30 +88,13 @@ export const seedAll = async () => {
         Screen.deleteMany({}),
         Theatre.deleteMany({}),
         Movie.deleteMany({}),
-        User.deleteMany({ email: { $in: [env.ADMIN_EMAIL?.toLowerCase(), 'demo@showtime.test'] } }),
+        User.deleteMany({ email: 'demo@showtime.test' }),
       ]);
       console.log('Seeded collections wiped clean.');
     }
 
-    // 2. Seed Users: Admin and Demo User
-    console.log('\n1. Seeding Users...');
-    const adminEmail = (process.env.ADMIN_EMAIL || env.ADMIN_EMAIL || 'admin@showtime.test').toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD || env.ADMIN_PASSWORD || 'Admin@1234';
-    const adminHash = await bcrypt.hash(adminPassword, 10);
-
-    const adminUser = await User.findOneAndUpdate(
-      { email: adminEmail },
-      {
-        name: 'ShowTime Administrator',
-        email: adminEmail,
-        passwordHash: adminHash,
-        role: USER_ROLES.ADMIN,
-        isActive: true,
-      },
-      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
-    );
-    console.log(`- Admin user ready: ${adminUser.email}`);
-
+    // 2. Seed Users: Demo User
+    console.log('\n1. Seeding Demo User...');
     const demoPasswordHash = await bcrypt.hash('Demo@1234', 10);
     const demoUser = await User.findOneAndUpdate(
       { email: 'demo@showtime.test' },
@@ -120,7 +102,6 @@ export const seedAll = async () => {
         name: 'ShowTime Demo User',
         email: 'demo@showtime.test',
         passwordHash: demoPasswordHash,
-        role: USER_ROLES.USER,
         phone: '9876543210',
         isActive: true,
       },
@@ -245,7 +226,7 @@ export const seedAll = async () => {
 
     return {
       success: true,
-      users: 2,
+      users: 1,
       movies: createdMovies.length,
       theatres: createdTheatres.length,
       screens: createdScreens.length,

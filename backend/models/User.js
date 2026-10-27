@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { USER_ROLES } from '../config/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -32,14 +31,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^[6-9][0-9]{9}$/, 'Phone must be a valid 10-digit Indian mobile number'],
       default: null,
-    },
-    role: {
-      type: String,
-      enum: {
-        values: [USER_ROLES.USER, USER_ROLES.ADMIN],
-        message: '{VALUE} is not a valid role',
-      },
-      default: USER_ROLES.USER,
     },
     isActive: {
       type: Boolean,

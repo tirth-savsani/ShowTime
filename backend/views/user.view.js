@@ -10,7 +10,6 @@ export const serializeUser = (user) => {
     name: user.name,
     email: user.email,
     phone: user.phone || null,
-    role: user.role,
     isActive: user.isActive !== undefined ? user.isActive : true,
     lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : null,
     createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,

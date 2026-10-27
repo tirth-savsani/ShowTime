@@ -5,7 +5,6 @@ import {
   formatCheckout,
   formatTicket,
 } from '../views/booking.view.js';
-import { USER_ROLES } from '../config/constants.js';
 
 export const checkout = catchAsync(async (req, res) => {
   const data = await bookingService.checkout(req.user._id, req.body.showId);
@@ -50,11 +49,9 @@ export const getMyBookings = catchAsync(async (req, res) => {
 });
 
 export const getBookingById = catchAsync(async (req, res) => {
-  const isAdmin = req.user.role === USER_ROLES.ADMIN;
   const ticket = await bookingService.getBookingById(
     req.user._id,
-    req.params.id,
-    isAdmin
+    req.params.id
   );
   return sendSuccess(res, {
     statusCode: 200,
@@ -64,11 +61,9 @@ export const getBookingById = catchAsync(async (req, res) => {
 });
 
 export const cancelBooking = catchAsync(async (req, res) => {
-  const isAdmin = req.user.role === USER_ROLES.ADMIN;
   const ticket = await bookingService.cancelBooking(
     req.user._id,
     req.params.id,
-    isAdmin,
     req.body?.reason
   );
   return sendSuccess(res, {

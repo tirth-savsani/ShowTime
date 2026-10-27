@@ -13,7 +13,6 @@ import { getISTDayBounds } from '../utils/dateUtils.js';
 import {
   SHOW_ADS_MINUTES,
   SHOW_BUFFER_MINUTES,
-  BOOKING_WINDOW_DAYS_ADMIN,
   SHOW_STATUSES,
   BOOKING_STATUSES,
   CANCEL_REASONS,
@@ -69,11 +68,11 @@ export const createShow = async ({ movie, screen, startTime, language, format, p
     throw new AppError('Show startTime must be in the future', 400, 'SHOW_IN_PAST');
   }
 
-  // Admin booking window limit (Spec B1, B5)
-  const maxAdvanceMs = BOOKING_WINDOW_DAYS_ADMIN * 24 * 60 * 60 * 1000;
+  // Advance booking window limit (30 days)
+  const maxAdvanceMs = 30 * 24 * 60 * 60 * 1000;
   if (startTimeDate.getTime() > now.getTime() + maxAdvanceMs) {
     throw new AppError(
-      `Show startTime cannot be more than ${BOOKING_WINDOW_DAYS_ADMIN} days in the future`,
+      'Show startTime cannot be more than 30 days in the future',
       400,
       'VALIDATION_ERROR'
     );
@@ -324,64 +323,6 @@ export const getShowById = async (showId) => {
 };
 
 /**
- * Admin list shows with filters and pagination (Spec B4)
- */
-export const listAdminShows = async ({
-  movie,
-  theatre,
-  date,
-  status,
-  page = 1,
-  limit = DEFAULT_PAGE_LIMIT,
-}) => {
-  const filter = {};
-
-  if (movie) filter.movie = movie;
-  if (theatre) filter.theatre = theatre;
-  if (status) filter.status = status;
-
-  if (date) {
-    const { dayStart, dayEnd } = getISTDayBounds(date);
-    filter.startTime = { $gte: dayStart, $lt: dayEnd };
-  }
-
-  const total = await Show.countDocuments(filter);
-  const shows = await Show.find(filter)
-    .populate('movie', 'title durationMin posterUrl certificate')
-    .populate('theatre', 'name city')
-    .populate('screen', 'name totalSeats')
-    .sort({ startTime: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit);
-
-  // Grouped aggregation to get bookedCount for all returned shows without N+1
-  const showIds = shows.map((s) => s._id);
-  const bookedCounts = await BookedSeat.aggregate([
-    { $match: { show: { $in: showIds } } },
-    { $group: { _id: '$show', count: { $sum: 1 } } },
-  ]);
-
-  const bookedMap = new Map(bookedCounts.map((b) => [b._id.toString(), b.count]));
-
-  const items = shows.map((s) => {
-    const showObj = s.toObject();
-    showObj.bookedCount = bookedMap.get(s._id.toString()) || 0;
-    showObj.capacity = s.screen?.totalSeats || 0;
-    return showObj;
-  });
-
-  return {
-    items,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit) || 1,
-    },
-  };
-};
-
-/**
  * Public listing of shows by movie grouped by theatre (Spec B6.8)
  */
 export const listByMovie = async (movieId, { date, city }) => {
@@ -513,6 +454,5 @@ export default {
   updateShow,
   cancelShow,
   getShowById,
-  listAdminShows,
   listByMovie,
 };

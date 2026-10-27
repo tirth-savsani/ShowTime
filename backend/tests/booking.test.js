@@ -13,7 +13,6 @@ import { Booking } from '../models/Booking.js';
 import razorpayInstance from '../config/razorpay.js';
 import {
   COOKIE_NAME,
-  USER_ROLES,
   MOVIE_STATUSES,
   SHOW_STATUSES,
   BOOKING_STATUSES,
@@ -29,10 +28,8 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
   let sampleShow;
   let user1;
   let user2;
-  let adminUser;
   let user1Cookie;
   let user2Cookie;
-  let adminCookie;
 
   const generateSignature = (orderId, paymentId, secret = process.env.RAZORPAY_KEY_SECRET || env.RAZORPAY_KEY_SECRET || 'mock_secret_key') => {
     return crypto.createHmac('sha256', secret).update(`${orderId}|${paymentId}`).digest('hex');
@@ -69,7 +66,6 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
       name: 'User One',
       email: 'user1.book@showtime.test',
       passwordHash,
-      role: USER_ROLES.USER,
       isActive: true,
     });
 
@@ -77,25 +73,14 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
       name: 'User Two',
       email: 'user2.book@showtime.test',
       passwordHash,
-      role: USER_ROLES.USER,
       isActive: true,
     });
 
-    adminUser = await User.create({
-      name: 'Admin Book',
-      email: 'admin.book@showtime.test',
-      passwordHash,
-      role: USER_ROLES.ADMIN,
-      isActive: true,
-    });
-
-    const token1 = jwt.sign({ sub: user1._id.toString(), role: user1.role }, env.JWT_SECRET);
-    const token2 = jwt.sign({ sub: user2._id.toString(), role: user2.role }, env.JWT_SECRET);
-    const adminToken = jwt.sign({ sub: adminUser._id.toString(), role: adminUser.role }, env.JWT_SECRET);
+    const token1 = jwt.sign({ sub: user1._id.toString() }, env.JWT_SECRET);
+    const token2 = jwt.sign({ sub: user2._id.toString() }, env.JWT_SECRET);
 
     user1Cookie = `${COOKIE_NAME}=${token1}`;
     user2Cookie = `${COOKIE_NAME}=${token2}`;
-    adminCookie = `${COOKIE_NAME}=${adminToken}`;
 
     // 3. Create Catalogue setup
     sampleMovie = await Movie.create({
@@ -412,15 +397,6 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
 
       expect(res.status).toBe(404);
       expect(res.body.code).toBe('NOT_FOUND');
-    });
-
-    it('allows admin to read any user booking', async () => {
-      const res = await request(app)
-        .get(`/api/bookings/${user1ConfirmedBooking.id}`)
-        .set('Cookie', adminCookie);
-
-      expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe(user1ConfirmedBooking.id);
     });
   });
 

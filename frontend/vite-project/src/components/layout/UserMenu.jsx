@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Ticket, Shield, LogOut, ChevronDown } from 'lucide-react';
+import { Ticket, LogOut, ChevronDown } from 'lucide-react';
 import { logoutUser } from '../../store/slices/authSlice.js';
 
 export const UserMenu = ({ user }) => {
@@ -19,8 +19,6 @@ export const UserMenu = ({ user }) => {
         .join('')
         .toUpperCase()
     : 'U';
-
-  const isAdmin = user?.role === 'admin';
 
   // Outside click & Escape listener (Spec C5)
   useEffect(() => {
@@ -89,17 +87,6 @@ export const UserMenu = ({ user }) => {
               <Ticket className="w-4 h-4 text-muted" />
               My Bookings
             </Link>
-
-            {isAdmin && (
-              <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2 text-sm text-primary font-medium hover:bg-red-50/50 transition-colors"
-              >
-                <Shield className="w-4 h-4 text-primary" />
-                Admin Panel
-              </Link>
-            )}
 
             <button
               type="button"

@@ -367,11 +367,10 @@ export const getMyBookings = async (
 };
 
 /**
- * Retrieves single booking by ID (only owner or admin allowed, Spec B4)
+ * Retrieves single booking by ID (only owner allowed)
  */
-export const getBookingById = async (userId, bookingId, isAdmin = false) => {
-  const query = isAdmin ? { _id: bookingId } : { _id: bookingId, user: userId };
-  const booking = await Booking.findOne(query);
+export const getBookingById = async (userId, bookingId) => {
+  const booking = await Booking.findOne({ _id: bookingId, user: userId });
 
   if (!booking) {
     throw new AppError('Booking not found', 404, 'NOT_FOUND');
@@ -386,11 +385,9 @@ export const getBookingById = async (userId, bookingId, isAdmin = false) => {
 export const cancelBooking = async (
   userId,
   bookingId,
-  isAdmin = false,
   reason = null
 ) => {
-  const query = isAdmin ? { _id: bookingId } : { _id: bookingId, user: userId };
-  const booking = await Booking.findOne(query);
+  const booking = await Booking.findOne({ _id: bookingId, user: userId });
 
   if (!booking) {
     throw new AppError('Booking not found', 404, 'NOT_FOUND');
@@ -405,16 +402,14 @@ export const cancelBooking = async (
   }
 
   // User cancel time-window check: must be > 2 hours before showtime (Spec B6.6)
-  if (!isAdmin) {
-    const showTime = new Date(booking.snapshot.startTime).getTime();
-    const cutoffMs = CANCEL_CUTOFF_HOURS * 60 * 60 * 1000;
-    if (showTime - Date.now() <= cutoffMs) {
-      throw new AppError(
-        'Cancellation window closed (showtime is within 2 hours)',
-        409,
-        'CANCEL_WINDOW_CLOSED'
-      );
-    }
+  const showTime = new Date(booking.snapshot.startTime).getTime();
+  const cutoffMs = CANCEL_CUTOFF_HOURS * 60 * 60 * 1000;
+  if (showTime - Date.now() <= cutoffMs) {
+    throw new AppError(
+      'Cancellation window closed (showtime is within 2 hours)',
+      409,
+      'CANCEL_WINDOW_CLOSED'
+    );
   }
 
   // Cancellation in transaction
@@ -424,7 +419,7 @@ export const cancelBooking = async (
       await BookedSeat.deleteMany({ booking: booking._id }, { session });
       booking.status = BOOKING_STATUSES.CANCELLED;
       booking.cancelledAt = new Date();
-      booking.cancelReason = reason || (isAdmin ? CANCEL_REASONS.ADMIN : CANCEL_REASONS.USER);
+      booking.cancelReason = reason || CANCEL_REASONS.USER;
       await booking.save({ session });
     });
   } finally {
@@ -537,58 +532,6 @@ export const reconcilePendingPayments = async () => {
   }
 };
 
-/**
- * Admin: list all bookings with filters and pagination (Spec B4, B6.11)
- * Filters: movie (ObjectId), status, email, dateFrom, dateTo
- */
-export const listAdminBookings = async ({
-  movie,
-  status,
-  email,
-  dateFrom,
-  dateTo,
-  page = 1,
-  limit = DEFAULT_PAGE_LIMIT,
-} = {}) => {
-  const filter = {};
-
-  if (movie) filter['snapshot.movieId'] = new mongoose.Types.ObjectId(movie);
-  if (status) filter.status = status;
-
-  if (dateFrom || dateTo) {
-    filter.createdAt = {};
-    if (dateFrom) filter.createdAt.$gte = new Date(`${dateFrom}T00:00:00.000Z`);
-    if (dateTo) filter.createdAt.$lte = new Date(`${dateTo}T23:59:59.999Z`);
-  }
-
-  // Filter by user email requires a join — resolve user IDs first
-  if (email) {
-    const User = (await import('../models/User.js')).default;
-    const users = await User.find({ email: new RegExp(email, 'i') }).select('_id').lean();
-    filter.user = { $in: users.map((u) => u._id) };
-  }
-
-  const [total, bookings] = await Promise.all([
-    Booking.countDocuments(filter),
-    Booking.find(filter)
-      .populate('user', 'name email phone')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-  ]);
-
-  return {
-    bookings,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit) || 1,
-    },
-  };
-};
-
 export default {
   checkout,
   verifyAndConfirm,
@@ -599,5 +542,4 @@ export default {
   getBookingById,
   cancelBooking,
   handleWebhook,
-  listAdminBookings,
 };

@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { env } from '../config/env.js';
 import { AppError } from '../utils/AppError.js';
-import { USER_ROLES } from '../config/constants.js';
 
 // Pre-computed dummy hash to mitigate timing attacks on unknown email login
 const DUMMY_HASH = bcrypt.hashSync('dummy_password_timing_attack_mitigation_salt', 10);
@@ -12,7 +11,6 @@ export const generateToken = (user) => {
   return jwt.sign(
     {
       sub: user._id ? user._id.toString() : user.id,
-      role: user.role,
     },
     env.JWT_SECRET,
     {
@@ -37,7 +35,6 @@ export const register = async ({ name, email, password, phone }) => {
     email: email.toLowerCase(),
     passwordHash,
     phone: phone || null,
-    role: USER_ROLES.USER,
     isActive: true,
   });
 

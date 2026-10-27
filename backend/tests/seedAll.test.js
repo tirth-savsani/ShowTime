@@ -13,7 +13,6 @@ import { Movie } from '../models/Movie.js';
 import { Theatre } from '../models/Theatre.js';
 import { Screen } from '../models/Screen.js';
 import { Show } from '../models/Show.js';
-import { USER_ROLES } from '../config/constants.js';
 
 describe('Comprehensive Seeder (seedAll.js)', () => {
   beforeEach(async () => {
@@ -21,26 +20,19 @@ describe('Comprehensive Seeder (seedAll.js)', () => {
   });
 
   it('seeds complete catalogue, users, screens, and shows successfully', async () => {
-    process.env.ADMIN_EMAIL = 'admin.seedall@showtime.test';
-    process.env.ADMIN_PASSWORD = 'AdminSeedPassword@123';
-
     const result = await seedAll();
 
     expect(result.success).toBe(true);
-    expect(result.users).toBe(2);
+    expect(result.users).toBe(1);
     expect(result.movies).toBe(10);
     expect(result.theatres).toBe(4);
     expect(result.screens).toBe(8);
     expect(result.shows).toBeGreaterThan(0);
 
-    // Verify Admin & Demo User
-    const admin = await User.findOne({ email: 'admin.seedall@showtime.test' });
-    expect(admin).not.toBeNull();
-    expect(admin.role).toBe(USER_ROLES.ADMIN);
-
+    // Verify Demo User
     const demo = await User.findOne({ email: 'demo@showtime.test' });
     expect(demo).not.toBeNull();
-    expect(demo.role).toBe(USER_ROLES.USER);
+    expect(demo.email).toBe('demo@showtime.test');
 
     // Verify Theatres & Screens
     const theatres = await Theatre.find();

@@ -68,7 +68,5 @@ export const env = {
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy',
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret',
   RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || '',
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@showtime.test',
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'ChangeMe@123',
   SEED_CONFIRM: process.env.SEED_CONFIRM === 'true',
 };
