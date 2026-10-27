@@ -10,8 +10,12 @@ export const register = catchAsync(async (req, res) => {
   // Set httpOnly cookie
   res.cookie(COOKIE_NAME, token, getAuthCookieOptions());
 
-  return sendSuccess(res, 201, 'User registered successfully', {
-    user: serializeUser(user),
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: 'User registered successfully',
+    data: {
+      user: serializeUser(user),
+    },
   });
 });
 
@@ -21,8 +25,12 @@ export const login = catchAsync(async (req, res) => {
   // Set httpOnly cookie
   res.cookie(COOKIE_NAME, token, getAuthCookieOptions());
 
-  return sendSuccess(res, 200, 'Login successful', {
-    user: serializeUser(user),
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Login successful',
+    data: {
+      user: serializeUser(user),
+    },
   });
 });
 
@@ -30,14 +38,21 @@ export const logout = catchAsync(async (req, res) => {
   // Clear httpOnly cookie with identical options (Spec B8)
   res.clearCookie(COOKIE_NAME, getClearCookieOptions());
 
-  return sendSuccess(res, 200, 'Logged out successfully');
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Logged out successfully',
+  });
 });
 
 export const getMe = catchAsync(async (req, res) => {
   const user = await authService.getCurrentUser(req.user._id || req.user.id);
 
-  return sendSuccess(res, 200, 'Current user profile fetched', {
-    user: serializeUser(user),
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Current user profile fetched',
+    data: {
+      user: serializeUser(user),
+    },
   });
 });
 

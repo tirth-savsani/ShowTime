@@ -148,7 +148,7 @@ export const MyBookings = () => {
         {/* Content Area */}
         {error ? (
           <ErrorState
-            title="Unable to load bookings"
+            title="We couldn't load your bookings"
             message={error}
             onRetry={fetchBookings}
           />

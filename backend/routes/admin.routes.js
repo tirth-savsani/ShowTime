@@ -42,7 +42,7 @@ const router = Router();
 router.use(authenticate, authorizeRoles(USER_ROLES.ADMIN));
 
 router.get('/test', (req, res) => {
-  return sendSuccess(res, 200, 'Admin authorized access');
+  return sendSuccess(res, { statusCode: 200, message: 'Admin authorized access' });
 });
 
 // Admin Stats (Spec B4, B6.11)

@@ -38,6 +38,21 @@ export const validateEnv = () => {
     console.error('======================================================\n');
     process.exit(1);
   }
+
+  const keyId = process.env.RAZORPAY_KEY_ID || '';
+  const isTestKey = keyId.startsWith('rzp_test_');
+
+  if (process.env.NODE_ENV === 'production') {
+    if (isTestKey && process.env.ALLOW_TEST_IN_PROD !== 'true') {
+      console.warn('⚠️ [Payment] WARNING: Using Razorpay TEST key in PRODUCTION environment.');
+    }
+  } else {
+    if (!isTestKey && !keyId.includes('dummy')) {
+      console.error('\n⚠️ [Payment] DANGER: Live Razorpay credentials detected in non-production environment! Aborting boot.');
+      process.exit(1);
+    }
+    console.log(`[Payment] Razorpay configured in ${isTestKey ? 'TEST' : 'MOCK'} mode (${keyId.slice(0, 12)}...)`);
+  }
 };
 
 export const env = {

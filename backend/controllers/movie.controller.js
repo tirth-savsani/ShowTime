@@ -9,13 +9,12 @@ export const listMovies = catchAsync(async (req, res) => {
     isAdmin: false,
   });
 
-  return sendList(
-    res,
-    200,
-    'Movies fetched successfully',
-    result.items.map(serializeMovieCard),
-    result.pagination
-  );
+  return sendList(res, {
+    statusCode: 200,
+    message: 'Movies fetched successfully',
+    items: result.items.map(serializeMovieCard),
+    pagination: result.pagination,
+  });
 });
 
 export const listAdminMovies = catchAsync(async (req, res) => {
@@ -24,51 +23,73 @@ export const listAdminMovies = catchAsync(async (req, res) => {
     isAdmin: true,
   });
 
-  return sendList(
-    res,
-    200,
-    'Admin movies fetched successfully',
-    result.items.map(serializeMovieCard),
-    result.pagination
-  );
+  return sendList(res, {
+    statusCode: 200,
+    message: 'Admin movies fetched successfully',
+    items: result.items.map(serializeMovieCard),
+    pagination: result.pagination,
+  });
 });
 
 export const getFeatured = catchAsync(async (req, res) => {
   const items = await movieService.getFeaturedMovies({ city: req.query.city });
 
-  return sendSuccess(res, 200, 'Featured movies fetched successfully', {
-    items: items.map(serializeMovieCard),
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Featured movies fetched successfully',
+    data: {
+      items: items.map(serializeMovieCard),
+    },
   });
 });
 
 export const getMovieById = catchAsync(async (req, res) => {
   const movie = await movieService.getMovieById(req.params.id, false);
 
-  return sendSuccess(res, 200, 'Movie details fetched successfully', serializeMovieDetail(movie));
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Movie details fetched successfully',
+    data: serializeMovieDetail(movie),
+  });
 });
 
 export const getAdminMovieById = catchAsync(async (req, res) => {
   const movie = await movieService.getMovieById(req.params.id, true);
 
-  return sendSuccess(res, 200, 'Admin movie details fetched successfully', serializeMovieDetail(movie));
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Admin movie details fetched successfully',
+    data: serializeMovieDetail(movie),
+  });
 });
 
 export const createMovie = catchAsync(async (req, res) => {
   const movie = await movieService.createMovie(req.body, req.files);
 
-  return sendSuccess(res, 201, 'Movie created successfully', serializeMovieDetail(movie));
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: 'Movie created successfully',
+    data: serializeMovieDetail(movie),
+  });
 });
 
 export const updateMovie = catchAsync(async (req, res) => {
   const movie = await movieService.updateMovie(req.params.id, req.body, req.files);
 
-  return sendSuccess(res, 200, 'Movie updated successfully', serializeMovieDetail(movie));
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Movie updated successfully',
+    data: serializeMovieDetail(movie),
+  });
 });
 
 export const deleteMovie = catchAsync(async (req, res) => {
   await movieService.deleteMovie(req.params.id);
 
-  return sendSuccess(res, 200, 'Movie deleted successfully');
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Movie deleted successfully',
+  });
 });
 
 export default {

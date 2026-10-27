@@ -24,7 +24,11 @@ import { CANCEL_REASONS } from '../config/constants.js';
 export const getStats = catchAsync(async (req, res) => {
   const days = parseInt(req.query.days, 10) || 14;
   const stats = await reportService.getStats(days);
-  return sendSuccess(res, 200, 'Dashboard stats retrieved.', serializeStats(stats));
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Dashboard stats retrieved.',
+    data: serializeStats(stats),
+  });
 });
 
 // ----------------------------------------------------------------
@@ -48,7 +52,12 @@ export const listAdminBookings = catchAsync(async (req, res) => {
     limit: parseInt(limit, 10) || 12,
   });
 
-  return sendList(res, 200, 'Bookings retrieved.', result.bookings, result.pagination);
+  return sendList(res, {
+    statusCode: 200,
+    message: 'Bookings retrieved.',
+    items: result.bookings,
+    pagination: result.pagination,
+  });
 });
 
 /**
@@ -63,7 +72,11 @@ export const cancelAdminBooking = catchAsync(async (req, res) => {
     true,             // isAdmin
     CANCEL_REASONS.ADMIN
   );
-  return sendSuccess(res, 200, 'Booking cancelled by admin.', ticket);
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: 'Booking cancelled by admin.',
+    data: ticket,
+  });
 });
 
 // ----------------------------------------------------------------
@@ -84,7 +97,12 @@ export const listUsers = catchAsync(async (req, res) => {
   });
 
   const serialized = result.users.map(serializeUser);
-  return sendList(res, 200, 'Users retrieved.', serialized, result.pagination);
+  return sendList(res, {
+    statusCode: 200,
+    message: 'Users retrieved.',
+    items: serialized,
+    pagination: result.pagination,
+  });
 });
 
 /**
@@ -96,7 +114,11 @@ export const updateUserStatus = catchAsync(async (req, res) => {
   const { isActive } = req.body;
 
   const user = await userService.updateUserStatus(req.user._id, id, isActive);
-  return sendSuccess(res, 200, `User ${isActive ? 'activated' : 'deactivated'} successfully.`, serializeUser(user));
+  return sendSuccess(res, {
+    statusCode: 200,
+    message: `User ${isActive ? 'activated' : 'deactivated'} successfully.`,
+    data: serializeUser(user),
+  });
 });
 
 export default {

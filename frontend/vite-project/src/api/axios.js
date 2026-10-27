@@ -1,18 +1,20 @@
 /**
- * Central Axios Instance (Spec C3)
+ * Central Axios Instance (Phase 1.2, Spec C3)
  *
  * Rules:
  * - baseURL from VITE_API_URL (fallback http://localhost:8084)
  * - withCredentials: true
  * - timeout: 20000ms
  * - Unwraps response.data.data
- * - Normalizes errors to { status, code, message, details }
+ * - Normalizes errors to { status, code, message } using friendly copy
+ * - Raw details logged to console.error only in development
  * - On 401 (except /auth/me and /auth/login), triggers logout and opens AuthModal
- * - On network error, toasts 'Network error. Check your connection.'
+ * - On network error, toasts friendly network error with deduplication
  */
 
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import { toast } from '../utils/toast.js';
+import { getFriendlyErrorMessage } from '../utils/errorMessages.js';
 
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8084';
 
@@ -32,7 +34,7 @@ export const injectStore = (store) => {
   storeRef = store;
 };
 
-// Response Interceptor (Spec C3)
+// Response Interceptor (Spec C3, Phase 1.2)
 api.interceptors.response.use(
   (response) => {
     // Spec: unwrap response.data.data
@@ -44,24 +46,39 @@ api.interceptors.response.use(
   (error) => {
     // 1. Network / Timeout Errors
     if (!error.response) {
-      toast.error('Network error. Check your connection.');
+      const friendlyMsg = getFriendlyErrorMessage('NETWORK_ERROR', 0);
+      toast.error(friendlyMsg);
+
+      if (import.meta.env.DEV) {
+        console.error('[Network / Timeout Error]', error);
+      }
+
       return Promise.reject({
         status: 0,
         code: 'NETWORK_ERROR',
-        message: 'Network error. Check your connection.',
-        details: null,
+        message: friendlyMsg,
       });
     }
 
     const { status, data, config } = error.response;
     const url = config?.url || '';
 
-    // 2. Normalize server error payload
+    // 2. Resolve friendly error message from code or status
+    const code = data?.code || (status >= 500 ? 'SERVER_ERROR' : 'UNKNOWN');
+    const friendlyMessage = getFriendlyErrorMessage(code, status);
+
+    if (import.meta.env.DEV) {
+      console.error(`[API Error ${status}] ${config?.method?.toUpperCase()} ${url}:`, {
+        rawServerResponse: data,
+        code,
+        friendlyMessage,
+      });
+    }
+
     const normalizedError = {
       status,
-      code: data?.code || 'ERROR',
-      message: data?.message || 'An unexpected error occurred.',
-      details: data?.details || data?.errors || null,
+      code,
+      message: friendlyMessage,
     };
 
     // 3. 401 Unauthorized handling (Spec C3)
@@ -69,7 +86,6 @@ api.interceptors.response.use(
     const isAuthProbe = url.includes('/auth/me') || url.includes('/auth/login');
 
     if (status === 401 && !isAuthProbe && storeRef) {
-      // Lazy import or call stored dispatch to reset auth state and open AuthModal
       storeRef.dispatch({ type: 'auth/handleUnauthorized' });
     }
 

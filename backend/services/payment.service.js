@@ -103,9 +103,45 @@ export const refund = async (paymentId, amountInPaise, notes = {}) => {
   }
 };
 
+/**
+ * Fetches payment details from Razorpay
+ */
+export const fetchPayment = async (paymentId) => {
+  try {
+    return await razorpayInstance.payments.fetch(paymentId);
+  } catch (err) {
+    throw new AppError('Could not fetch payment from payment provider', 502, 'PAYMENT_FETCH_FAILED', null, { originalError: err.message });
+  }
+};
+
+/**
+ * Captures an authorized payment
+ */
+export const capturePayment = async (paymentId, amountInPaise, currency = 'INR') => {
+  try {
+    return await razorpayInstance.payments.capture(paymentId, Math.round(amountInPaise), currency);
+  } catch (err) {
+    throw new AppError('Failed to capture payment', 502, 'PAYMENT_CAPTURE_FAILED', null, { originalError: err.message });
+  }
+};
+
+/**
+ * Fetches all payments associated with an order
+ */
+export const fetchOrderPayments = async (orderId) => {
+  try {
+    return await razorpayInstance.orders.fetchPayments(orderId);
+  } catch (err) {
+    throw new AppError('Could not fetch order payments from payment provider', 502, 'ORDER_PAYMENTS_FETCH_FAILED', null, { originalError: err.message });
+  }
+};
+
 export default {
   createOrder,
   verifySignature,
   verifyWebhookSignature,
   refund,
+  fetchPayment,
+  capturePayment,
+  fetchOrderPayments,
 };

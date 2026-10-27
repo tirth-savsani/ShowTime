@@ -80,7 +80,13 @@ export const errorHandler = (err, req, res, next) => {
     console.warn(`[WARN ${statusCode} - ${code}] ${req.method} ${req.originalUrl}:`, loggedMessage);
   }
 
-  return sendError(res, statusCode, message, code, errors, details);
+  return sendError(res, {
+    statusCode,
+    message,
+    code,
+    errors,
+    details,
+  });
 };
 
 export default errorHandler;

@@ -161,6 +161,76 @@ export const checkout = async (userId, showId) => {
 };
 
 /**
+ * Helper to confirm paid booking and insert BookedSeats inside transaction
+ */
+export const confirmPaidBooking = async (booking, paymentId, signature = null, session = null) => {
+  const isOuterSession = Boolean(session);
+  const dbSession = session || (await mongoose.startSession());
+  try {
+    const execute = async (s) => {
+      // Insert BookedSeat rows (UNIQUE index decides final seat ownership)
+      const bookedSeatsToInsert = booking.seats.map((seat) => ({
+        show: booking.show,
+        seatId: seat.seatId,
+        booking: booking._id,
+      }));
+      await BookedSeat.insertMany(bookedSeatsToInsert, { session: s });
+
+      // Delete active holds for these seats
+      const seatIds = booking.seats.map((seat) => seat.seatId);
+      await SeatHold.deleteMany({ show: booking.show, seatId: { $in: seatIds } }, { session: s });
+
+      // Confirm booking
+      booking.status = BOOKING_STATUSES.CONFIRMED;
+      booking.razorpay = booking.razorpay || {};
+      booking.razorpay.paymentId = paymentId;
+      if (signature) {
+        booking.razorpay.signature = signature;
+      }
+      booking.confirmedAt = new Date();
+      await booking.save({ session: s });
+    };
+
+    if (isOuterSession) {
+      await execute(dbSession);
+    } else {
+      await dbSession.withTransaction(async () => {
+        await execute(dbSession);
+      });
+    }
+  } catch (err) {
+    // Duplicate key on BookedSeat: seats were taken during payment (Spec B6.5)
+    if (err.code === 11000) {
+      const refundRes = await paymentService.refund(
+        paymentId,
+        booking.amount * 100,
+        {
+          bookingRef: booking.bookingRef,
+          reason: 'SEATS_LOST',
+        }
+      );
+      booking.status = BOOKING_STATUSES.FAILED;
+      booking.refund = refundRes;
+      booking.cancelReason = CANCEL_REASONS.SEATS_LOST;
+      await booking.save();
+
+      throw new AppError(
+        'Selected seats were no longer available. A full refund has been initiated.',
+        409,
+        'SEATS_UNAVAILABLE_REFUNDED',
+        null,
+        { refundId: refundRes.id }
+      );
+    }
+    throw err;
+  } finally {
+    if (!isOuterSession) {
+      await dbSession.endSession();
+    }
+  }
+};
+
+/**
  * Verifies payment signature and confirms booking in transaction (Spec B6.5)
  */
 export const verifyAndConfirm = async (userId, payload) => {
@@ -203,57 +273,21 @@ export const verifyAndConfirm = async (userId, payload) => {
     throw new AppError('Invalid payment signature', 400, 'INVALID_SIGNATURE');
   }
 
-  // 5. Execute confirmation inside MongoDB transaction
-  const session = await mongoose.startSession();
+  // 5. Fetch payment from Razorpay and capture if authorized
   try {
-    await session.withTransaction(async () => {
-      // Insert BookedSeat rows (UNIQUE index decides final seat ownership)
-      const bookedSeatsToInsert = booking.seats.map((s) => ({
-        show: booking.show,
-        seatId: s.seatId,
-        booking: booking._id,
-      }));
-      await BookedSeat.insertMany(bookedSeatsToInsert, { session });
-
-      // Delete active holds for these seats
-      const seatIds = booking.seats.map((s) => s.seatId);
-      await SeatHold.deleteMany({ show: booking.show, seatId: { $in: seatIds } }, { session });
-
-      // Confirm booking
-      booking.status = BOOKING_STATUSES.CONFIRMED;
-      booking.razorpay.paymentId = razorpay_payment_id;
-      booking.razorpay.signature = razorpay_signature;
-      booking.confirmedAt = new Date();
-      await booking.save({ session });
-    });
-  } catch (err) {
-    // Duplicate key on BookedSeat: seats were taken during payment (Spec B6.5)
-    if (err.code === 11000) {
-      const refundRes = await paymentService.refund(
-        razorpay_payment_id,
-        booking.amount * 100,
-        {
-          bookingRef: booking.bookingRef,
-          reason: 'SEATS_LOST',
-        }
-      );
-      booking.status = BOOKING_STATUSES.FAILED;
-      booking.refund = refundRes;
-      booking.cancelReason = CANCEL_REASONS.SEATS_LOST;
-      await booking.save();
-
-      throw new AppError(
-        'Selected seats were no longer available. A full refund has been initiated.',
-        409,
-        'SEATS_UNAVAILABLE_REFUNDED',
-        null,
-        { refundId: refundRes.id }
-      );
+    const payment = await paymentService.fetchPayment(razorpay_payment_id);
+    if (payment && payment.status === 'authorized') {
+      await paymentService.capturePayment(razorpay_payment_id, booking.amount * 100);
     }
-    throw err;
-  } finally {
-    await session.endSession();
+  } catch (err) {
+    // Non-fatal if payment is already captured or provider test mock
+    if (env.NODE_ENV !== 'test') {
+      console.warn('[Payment fetch/capture notice]:', err.message);
+    }
   }
+
+  // 6. Execute confirmation inside MongoDB transaction
+  await confirmPaidBooking(booking, razorpay_payment_id, razorpay_signature);
 
   return ticketService.buildTicket(booking);
 };
@@ -442,38 +476,7 @@ export const handleWebhook = async (rawBody, signature) => {
   }
 
   if (event === 'payment.captured' && booking.status === BOOKING_STATUSES.PENDING) {
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        const bookedSeatsToInsert = booking.seats.map((s) => ({
-          show: booking.show,
-          seatId: s.seatId,
-          booking: booking._id,
-        }));
-        await BookedSeat.insertMany(bookedSeatsToInsert, { session });
-
-        const seatIds = booking.seats.map((s) => s.seatId);
-        await SeatHold.deleteMany({ show: booking.show, seatId: { $in: seatIds } }, { session });
-
-        booking.status = BOOKING_STATUSES.CONFIRMED;
-        booking.razorpay.paymentId = paymentId;
-        booking.confirmedAt = new Date();
-        await booking.save({ session });
-      });
-    } catch (err) {
-      if (err.code === 11000) {
-        const refundRes = await paymentService.refund(paymentId, booking.amount * 100, {
-          bookingRef: booking.bookingRef,
-          reason: 'SEATS_LOST',
-        });
-        booking.status = BOOKING_STATUSES.FAILED;
-        booking.refund = refundRes;
-        booking.cancelReason = CANCEL_REASONS.SEATS_LOST;
-        await booking.save();
-      }
-    } finally {
-      await session.endSession();
-    }
+    await confirmPaidBooking(booking, paymentId, 'webhook');
   } else if (event === 'payment.failed' && booking.status === BOOKING_STATUSES.PENDING) {
     booking.status = BOOKING_STATUSES.FAILED;
     booking.cancelReason = 'PAYMENT_FAILED_WEBHOOK';
@@ -488,6 +491,50 @@ export const handleWebhook = async (rawBody, signature) => {
   }
 
   return { received: true };
+};
+
+/**
+ * 1-minute background reconciliation for pending payments (Spec Phase 1.3)
+ */
+export const reconcilePendingPayments = async () => {
+  const now = new Date();
+  // Bookings in PENDING state created at least 1 minute ago with orderId
+  const pendingBookings = await Booking.find({
+    status: BOOKING_STATUSES.PENDING,
+    'razorpay.orderId': { $exists: true, $ne: null },
+    createdAt: { $lte: new Date(now.getTime() - 60 * 1000) },
+  }).limit(25);
+
+  for (const booking of pendingBookings) {
+    try {
+      const orderPayments = await paymentService.fetchOrderPayments(booking.razorpay.orderId);
+      const items = orderPayments?.items || [];
+      const successfulPayment = items.find((p) => p.status === 'captured');
+      const authorizedPayment = items.find((p) => p.status === 'authorized');
+
+      if (successfulPayment) {
+        console.log(`[Reconcile] Auto-confirming captured booking: ${booking.bookingRef}`);
+        await confirmPaidBooking(booking, successfulPayment.id, 'reconciled');
+      } else if (authorizedPayment) {
+        console.log(`[Reconcile] Capturing & confirming authorized booking: ${booking.bookingRef}`);
+        await paymentService.capturePayment(authorizedPayment.id, booking.amount * 100);
+        await confirmPaidBooking(booking, authorizedPayment.id, 'reconciled');
+      } else if (booking.expiresAt && booking.expiresAt < now) {
+        booking.status = BOOKING_STATUSES.EXPIRED;
+        await booking.save();
+        const seatIds = (booking.seats || []).map((s) => s.seatId);
+        await SeatHold.deleteMany({
+          show: booking.show,
+          user: booking.user,
+          seatId: { $in: seatIds },
+        });
+      }
+    } catch (err) {
+      if (env.NODE_ENV !== 'test') {
+        console.error(`[Reconcile Error for ${booking.bookingRef}]:`, err.message);
+      }
+    }
+  }
 };
 
 /**
@@ -545,6 +592,8 @@ export const listAdminBookings = async ({
 export default {
   checkout,
   verifyAndConfirm,
+  confirmPaidBooking,
+  reconcilePendingPayments,
   markFailed,
   getMyBookings,
   getBookingById,

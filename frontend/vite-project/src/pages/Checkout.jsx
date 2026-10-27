@@ -4,10 +4,15 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   Clock,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
   ShieldCheck,
   AlertTriangle,
   Loader2,
   Film,
+  Copy,
+  Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import bookingsApi from '../api/bookings.api.js';
@@ -32,10 +37,19 @@ export const Checkout = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(300); // 5 min default
+  const [isTestHelpOpen, setIsTestHelpOpen] = useState(false);
+  const [copiedText, setCopiedText] = useState('');
 
   // Network verification retry state
   const [pendingVerificationPayload, setPendingVerificationPayload] = useState(null);
   const [verificationError, setVerificationError] = useState(null);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedText(text);
+    toast.success(`Copied "${text}" to clipboard`);
+    setTimeout(() => setCopiedText(''), 2000);
+  };
 
   // Fetch show details for the summary card
   useEffect(() => {
@@ -116,6 +130,25 @@ export const Checkout = () => {
     }
   };
 
+  // Poll server for confirmed status in case verification or webhook is processing
+  const pollBookingConfirmation = async (targetBookingId, maxAttempts = 10) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const res = await bookingsApi.getBookingById(targetBookingId);
+        const booking = res?.data || res;
+        if (booking && (booking.status === 'CONFIRMED' || booking.id)) {
+          dispatch(clearBookingFlow());
+          navigate(`/booking/${booking.id || targetBookingId}/confirmation`, { replace: true });
+          return true;
+        }
+      } catch {
+        // continue polling
+      }
+    }
+    return false;
+  };
+
   // Retry payment verification in case of network interruption
   const handleRetryVerification = async () => {
     if (!pendingVerificationPayload) return;
@@ -129,9 +162,12 @@ export const Checkout = () => {
       dispatch(clearBookingFlow());
       navigate(`/booking/${confirmedTicket.id}/confirmation`, { replace: true });
     } catch (err) {
-      setVerificationError(
-        err?.message || 'Verification could not reach the server. Please check your network and try again.'
-      );
+      const resolved = await pollBookingConfirmation(pendingVerificationPayload.bookingId, 5);
+      if (!resolved) {
+        setVerificationError(
+          err?.message || 'Verification could not reach the server. Please check your network and try again.'
+        );
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -184,11 +220,14 @@ export const Checkout = () => {
             // Replace history so Back button does not return to checkout
             navigate(`/booking/${confirmedTicket.id}/confirmation`, { replace: true });
           } catch (verifyErr) {
-            // Network failure: save payload for user retry without re-charging
-            setPendingVerificationPayload(payload);
-            setVerificationError(
-              verifyErr?.message || 'Verification is taking longer than expected. Please retry below.'
-            );
+            // First attempt to poll for confirmation (e.g. if webhook / async capture caught it)
+            const resolved = await pollBookingConfirmation(booking.id, 5);
+            if (!resolved) {
+              setPendingVerificationPayload(payload);
+              setVerificationError(
+                verifyErr?.message || 'Verification is taking longer than expected. Please retry below.'
+              );
+            }
           } finally {
             setIsVerifying(false);
             setIsPaying(false);
@@ -249,11 +288,128 @@ export const Checkout = () => {
         <div className="flex items-center gap-2 text-xs text-muted">
           <Link
             to={`/shows/${showId}/seats`}
+            onClick={() => {
+              showsApi.releaseHold(showId).catch(() => {});
+              dispatch(clearBookingFlow());
+            }}
             className="flex items-center gap-1 hover:text-primary transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Back to seat map</span>
           </Link>
+        </div>
+
+        {/* Test Payment Helper Accordion */}
+        <div className="bg-white rounded-lg border border-blue-200 shadow-xs overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setIsTestHelpOpen(!isTestHelpOpen)}
+            className="w-full px-4 py-3 bg-blue-50/60 hover:bg-blue-50 flex items-center justify-between text-left transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-blue-600" />
+              <span className="text-xs font-bold text-blue-900">
+                Test Payment Help (Razorpay Sandbox Mode)
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white tracking-wider uppercase">
+                TEST
+              </span>
+            </div>
+            {isTestHelpOpen ? (
+              <ChevronUp className="w-4 h-4 text-blue-700" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-blue-700" />
+            )}
+          </button>
+
+          {isTestHelpOpen && (
+            <div className="p-4 text-xs space-y-3 bg-white text-gray-700 border-t border-blue-100">
+              <p className="text-[11px] text-gray-500">
+                ShowTime is running in Razorpay Test Mode. Real money will not be deducted. Click any item to copy:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Cards */}
+                <div className="p-3 bg-gray-50 rounded-md border border-gray-200 space-y-1.5">
+                  <span className="font-bold text-ink block text-[11px] uppercase tracking-wider text-muted">
+                    Test Cards
+                  </span>
+                  <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded border border-gray-200 font-mono text-[11px]">
+                    <div>
+                      <span className="text-gray-500 mr-1">Visa:</span>
+                      <span className="font-bold">4111 1111 1111 1111</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard('4111111111111111')}
+                      className="text-gray-400 hover:text-blue-600"
+                      title="Copy Visa Number"
+                    >
+                      {copiedText === '4111111111111111' ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded border border-gray-200 font-mono text-[11px]">
+                    <div>
+                      <span className="text-gray-500 mr-1">Mastercard:</span>
+                      <span className="font-bold">5123 4567 8901 2345</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard('5123456789012345')}
+                      className="text-gray-400 hover:text-blue-600"
+                      title="Copy Mastercard Number"
+                    >
+                      {copiedText === '5123456789012345' ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500">
+                    Expiry: Any future date (e.g. 12/28) • CVV: 123
+                  </p>
+                </div>
+
+                {/* UPI & Netbanking */}
+                <div className="p-3 bg-gray-50 rounded-md border border-gray-200 space-y-1.5">
+                  <span className="font-bold text-ink block text-[11px] uppercase tracking-wider text-muted">
+                    UPI & OTP
+                  </span>
+                  <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded border border-gray-200 font-mono text-[11px]">
+                    <div>
+                      <span className="text-gray-500 mr-1">Success UPI:</span>
+                      <span className="font-bold text-emerald-600">success@razorpay</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard('success@razorpay')}
+                      className="text-gray-400 hover:text-blue-600"
+                      title="Copy UPI ID"
+                    >
+                      {copiedText === 'success@razorpay' ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="p-2 bg-white rounded border border-gray-200 text-[10px] text-gray-600 space-y-1">
+                    <p>
+                      • <strong>OTP:</strong> Enter any 4-6 digits (e.g. 123456)
+                    </p>
+                    <p>
+                      • <strong>Netbanking:</strong> Select any test bank (HDFC, SBI, ICICI)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Verification Retry Banner (In case of network timeout) */}

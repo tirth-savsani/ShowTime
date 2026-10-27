@@ -7,6 +7,7 @@ const router = Router();
 
 // Public theatre routes (Spec B4)
 router.get('/', theatreController.listTheatres);
+router.get('/cities', theatreController.getCities);
 router.get('/:id', validate(idParamSchema), theatreController.getTheatreById);
 
 export default router;
