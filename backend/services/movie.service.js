@@ -116,8 +116,68 @@ export const getMovieById = async (id) => {
   return movie;
 };
 
+export const getMovieSections = async ({ city } = {}) => {
+  const queryNowShowing = {
+    isDeleted: false,
+    status: MOVIE_STATUSES.NOW_SHOWING,
+  };
+
+  if (city && city.trim() !== '') {
+    const normalisedCity = toTitleCase(city);
+    const ShowModel = mongoose.models.Show || mongoose.model('Show');
+    const movieIdsInCity = await ShowModel.distinct('movie', {
+      city: normalisedCity,
+      status: 'scheduled',
+      startTime: { $gt: new Date() },
+    });
+
+    if (movieIdsInCity.length > 0) {
+      queryNowShowing._id = { $in: movieIdsInCity };
+    }
+  }
+
+  const [nowShowing, comingSoon, trending] = await Promise.all([
+    Movie.find(queryNowShowing)
+      .sort({ releaseDate: -1, rating: -1, createdAt: -1 })
+      .limit(16),
+    Movie.find({ isDeleted: false, status: MOVIE_STATUSES.COMING_SOON })
+      .sort({ releaseDate: 1 })
+      .limit(12),
+    Movie.find({ isDeleted: false, status: MOVIE_STATUSES.NOW_SHOWING })
+      .sort({ rating: -1, votes: -1 })
+      .limit(10),
+  ]);
+
+  return {
+    nowShowing,
+    comingSoon,
+    trending,
+  };
+};
+
+export const suggestMovies = async ({ q } = {}) => {
+  if (!q || typeof q !== 'string' || q.trim() === '') {
+    return [];
+  }
+
+  const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escaped, 'i');
+
+  const movies = await Movie.find({
+    isDeleted: false,
+    title: { $regex: regex },
+  })
+    .sort({ rating: -1, releaseDate: -1 })
+    .limit(6)
+    .select('_id title posterUrl certificate languages genres formats rating status');
+
+  return movies;
+};
+
 export default {
   listMovies,
   getFeaturedMovies,
   getMovieById,
+  getMovieSections,
+  suggestMovies,
 };

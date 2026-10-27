@@ -80,8 +80,10 @@ const showSchema = new mongoose.Schema(
   }
 );
 
-// Indexes (Spec B3)
+// Indexes (Spec B3, Phase 4)
 showSchema.index({ movie: 1, city: 1, startTime: 1 });
+showSchema.index({ city: 1, status: 1, startTime: 1 });
+showSchema.index({ movie: 1, startTime: 1 });
 showSchema.index({ screen: 1, startTime: 1, endTime: 1 });
 showSchema.index({ theatre: 1, startTime: 1 });
 

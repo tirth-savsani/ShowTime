@@ -79,6 +79,7 @@ theatreSchema.pre('validate', function () {
 
 // Compound unique index on city and name (Spec B3)
 theatreSchema.index({ city: 1, name: 1 }, { unique: true });
+theatreSchema.index({ city: 1, isActive: 1 });
 
 export const Theatre = mongoose.model('Theatre', theatreSchema);
 export default Theatre;

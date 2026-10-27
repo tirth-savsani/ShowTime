@@ -201,9 +201,11 @@ const movieSchema = new mongoose.Schema(
   }
 );
 
-// Indexes (Spec B3)
+// Indexes (Spec B3, Phase 4)
 movieSchema.index({ title: 'text' });
 movieSchema.index({ status: 1, releaseDate: -1 });
+movieSchema.index({ isDeleted: 1, status: 1 });
+movieSchema.index({ rating: -1, votes: -1 });
 movieSchema.index({ genres: 1 });
 movieSchema.index({ languages: 1 });
 movieSchema.index({ isDeleted: 1 });

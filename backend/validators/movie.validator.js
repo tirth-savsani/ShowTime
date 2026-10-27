@@ -160,3 +160,15 @@ export const listMoviesQuerySchema = z.object({
     sort: z.enum(['releaseDate', 'title']).optional().default('releaseDate'),
   }),
 });
+
+export const movieSectionsQuerySchema = z.object({
+  query: z.object({
+    city: z.string().trim().optional(),
+  }),
+});
+
+export const suggestMoviesQuerySchema = z.object({
+  query: z.object({
+    q: z.string().trim().min(1, 'Search query is required').max(100),
+  }),
+});
