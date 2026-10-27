@@ -7,6 +7,7 @@ import {
   QrCode,
   Loader2,
   Ticket as TicketIcon,
+  Film,
 } from 'lucide-react';
 import bookingsApi from '../api/bookings.api.js';
 import Button from '../components/common/Button.jsx';
@@ -89,6 +90,8 @@ export const Confirmation = () => {
 
   const snapshot = ticket.snapshot || {};
   const seatsList = (ticket.seats || []).map((s) => s.seatId || s).join(', ');
+  const qrImage = ticket.qrDataUrl || ticket.qrCode;
+  const paymentId = ticket.razorpay?.paymentId || ticket.payment?.paymentId;
 
   return (
     <>
@@ -131,7 +134,7 @@ export const Confirmation = () => {
             </div>
           </div>
 
-          {/* 2. Authentic Ticket Card with Tear-Line */}
+          {/* 2. Authentic Ticket Card with Perforated Tear-Line */}
           <div
             id="printable-ticket"
             className="bg-white rounded-xl border border-border shadow-card overflow-hidden"
@@ -141,17 +144,36 @@ export const Confirmation = () => {
               <span className="text-lg font-black tracking-tight text-primary uppercase">
                 Show<span className="text-white">Time</span> Cinemas
               </span>
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-xs bg-white/20 text-white tracking-wider">
-                {ticket.bookingRef}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-300 uppercase tracking-wider font-semibold">Booking ID:</span>
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xs bg-white/20 text-white tracking-wider">
+                  {ticket.bookingRef}
+                </span>
+              </div>
             </div>
 
-            {/* Ticket Upper Body: Movie & Theatre */}
-            <div className="p-6 sm:p-8 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl sm:text-2xl font-black text-ink">
+            {/* Ticket Upper Body: Poster, Movie & Theatre Details */}
+            <div className="p-6 sm:p-8 space-y-5">
+              <div className="flex flex-col sm:flex-row gap-5 items-start">
+                {/* Poster Thumbnail */}
+                <div className="w-20 sm:w-24 aspect-[2/3] rounded-md overflow-hidden bg-gray-100 flex-shrink-0 border border-border shadow-xs">
+                  {snapshot.posterUrl ? (
+                    <img
+                      src={snapshot.posterUrl}
+                      alt={snapshot.movieTitle}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted">
+                      <Film className="w-6 h-6 opacity-40" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Details */}
+                <div className="flex-1 space-y-1.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight">
                       {snapshot.movieTitle}
                     </h2>
                     {snapshot.certificate && (
@@ -163,30 +185,30 @@ export const Confirmation = () => {
                   <p className="text-xs font-bold text-primary">
                     {snapshot.format || '2D'} • {snapshot.language || 'Hindi'}
                   </p>
-                </div>
-              </div>
 
-              {/* Theatre & Showtime Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
-                <div className="space-y-0.5">
-                  <span className="font-semibold text-muted">Theatre & Audi:</span>
-                  <p className="font-bold text-ink">
-                    {snapshot.theatreName}
-                  </p>
-                  <p className="text-muted truncate">{snapshot.theatreAddress}</p>
-                  <p className="font-semibold text-gray-700">{snapshot.screenName}</p>
-                </div>
+                  {/* Theatre & Showtime Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-muted">Theatre & Audi:</span>
+                      <p className="font-bold text-ink truncate">
+                        {snapshot.theatreName}
+                      </p>
+                      <p className="text-muted truncate">{snapshot.theatreAddress}</p>
+                      <p className="font-semibold text-gray-700">{snapshot.screenName}</p>
+                    </div>
 
-                <div className="space-y-0.5">
-                  <span className="font-semibold text-muted">Showtime:</span>
-                  <p className="font-bold text-ink">
-                    {formatDateTime(snapshot.startTime)}
-                  </p>
-                  <div className="pt-1">
-                    <span className="font-semibold text-muted">Seats: </span>
-                    <span className="font-mono font-bold text-sm text-primary">
-                      {seatsList}
-                    </span>
+                    <div className="space-y-0.5">
+                      <span className="font-semibold text-muted">Showtime:</span>
+                      <p className="font-bold text-ink">
+                        {formatDateTime(snapshot.startTime)}
+                      </p>
+                      <div className="pt-1">
+                        <span className="font-semibold text-muted">Seats: </span>
+                        <span className="font-mono font-bold text-sm text-primary">
+                          {seatsList}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -198,14 +220,14 @@ export const Confirmation = () => {
               <div className="absolute -right-3.5 -top-3 w-6 h-6 rounded-full bg-gray-50 border border-border" />
             </div>
 
-            {/* Ticket Lower Body: QR Code & Verification */}
+            {/* Ticket Lower Body: QR Code & Payment Verification */}
             <div className="p-6 sm:p-8 bg-gray-50/70 flex flex-col sm:flex-row items-center justify-between gap-6">
               {/* QR Code */}
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
-                {ticket.qrCode ? (
+                {qrImage ? (
                   <div className="w-32 h-32 p-1.5 bg-white border border-border rounded-md shadow-xs flex items-center justify-center">
                     <img
-                      src={ticket.qrCode}
+                      src={qrImage}
                       alt="Ticket Verification QR Code"
                       className="w-full h-full object-contain"
                     />
@@ -228,17 +250,17 @@ export const Confirmation = () => {
                     ₹{ticket.amount}
                   </p>
                 </div>
-                {ticket.payment?.paymentId && (
+                {paymentId && (
                   <div>
                     <span className="text-muted">Payment ID:</span>
                     <p className="font-mono text-gray-700">
-                      {ticket.payment.paymentId}
+                      {paymentId}
                     </p>
                   </div>
                 )}
                 <div>
                   <span className="text-muted">Status:</span>
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] uppercase">
+                  <span className="ml-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] uppercase">
                     {ticket.status}
                   </span>
                 </div>

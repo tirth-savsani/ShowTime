@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Search, Film, Loader2 } from 'lucide-react';
+import { Search, Film, Loader2, Star } from 'lucide-react';
 import moviesApi from '../../api/movies.api.js';
 
 export const SearchBar = ({ className = '' }) => {
@@ -15,7 +15,7 @@ export const SearchBar = ({ className = '' }) => {
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
-  // 350ms debounce search (Spec C3, C5)
+  // 300ms debounce auto-suggest (Spec C3, C5, Phase 4)
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([]);
@@ -27,15 +27,11 @@ export const SearchBar = ({ className = '' }) => {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const response = await moviesApi.getMovies({
-          search: query.trim(),
-          limit: 6,
-          city: selectedCity || undefined,
-        });
-        // Response is unwrapped by axios interceptor (either array or { items })
+        const response = await moviesApi.suggest(query.trim());
+        // Response is unwrapped by axios interceptor (either { items } or array)
         const movies = Array.isArray(response)
           ? response
-          : response?.items || [];
+          : response?.items || response?.suggestions || [];
         setResults(movies);
         setIsOpen(true);
         setSelectedIndex(-1);
@@ -44,10 +40,10 @@ export const SearchBar = ({ className = '' }) => {
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, selectedCity]);
+  }, [query]);
 
   // Click outside listener
   useEffect(() => {
@@ -151,11 +147,17 @@ export const SearchBar = ({ className = '' }) => {
                       <p className="text-xs text-muted truncate mt-0.5">
                         {(movie.genres || []).join(', ') || 'Feature Film'}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-ink rounded-xs font-semibold">
                           {movie.certificate || 'UA'}
                         </span>
-                        <span className="text-[11px] text-muted">
+                        {movie.rating ? (
+                          <span className="flex items-center gap-0.5 text-[11px] font-bold text-amber-600">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                            {Number(movie.rating).toFixed(1)}
+                          </span>
+                        ) : null}
+                        <span className="text-[11px] text-muted truncate">
                           {(movie.languages || []).join(', ')}
                         </span>
                       </div>

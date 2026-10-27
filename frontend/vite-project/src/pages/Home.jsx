@@ -14,6 +14,7 @@ export const Home = () => {
 
   const [featuredMovies, setFeaturedMovies] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
   const [comingSoonMovies, setComingSoonMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,40 +24,29 @@ export const Home = () => {
     setError(null);
 
     try {
-      // 1. Fetch featured movies (for hero carousel)
-      // 2. Fetch now showing movies (filtered by selected city)
-      // 3. Fetch coming soon movies
-      const [featuredRes, recommendedRes, comingSoonRes] = await Promise.all([
-        moviesApi.getFeaturedMovies({ city: selectedCity || undefined }).catch(() => ({ items: [] })),
-        moviesApi.getMovies({
-          status: 'now_showing',
-          city: selectedCity || undefined,
-          limit: 10,
-        }),
-        moviesApi.getMovies({
-          status: 'coming_soon',
-          limit: 10,
-        }),
-      ]);
+      // Fetch sections (cached and indexed in Phase 4)
+      const sectionsRes = await moviesApi.getSections({
+        city: selectedCity || undefined,
+      });
 
-      const featuredList = Array.isArray(featuredRes)
-        ? featuredRes
-        : featuredRes?.items || [];
-      const recommendedList = Array.isArray(recommendedRes)
-        ? recommendedRes
-        : recommendedRes?.items || [];
-      const comingSoonList = Array.isArray(comingSoonRes)
-        ? comingSoonRes
-        : comingSoonRes?.items || [];
+      const sections = sectionsRes?.data || sectionsRes || {};
+      const nowShowing = sections.nowShowing || [];
+      const trending = sections.trending || [];
+      const comingSoon = sections.comingSoon || [];
 
-      // If featured is empty, fallback to first few recommended movies with backdrops/posters
-      setFeaturedMovies(
-        featuredList.length > 0 ? featuredList : recommendedList.slice(0, 5)
-      );
-      setRecommendedMovies(recommendedList);
-      setComingSoonMovies(comingSoonList);
+      // Hero carousel picks top 7 from trending or nowShowing
+      const heroList = trending.length > 0 ? trending.slice(0, 7) : nowShowing.slice(0, 7);
+
+      setFeaturedMovies(heroList);
+      setRecommendedMovies(nowShowing);
+      setTrendingMovies(trending);
+      setComingSoonMovies(comingSoon);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load movies. Please check your connection.');
+      setError(
+        err?.message ||
+          err?.response?.data?.message ||
+          'Failed to load movies. Please check your connection.'
+      );
     } finally {
       setLoading(false);
     }
@@ -68,8 +58,8 @@ export const Home = () => {
 
   return (
     <div className="space-y-8 sm:space-y-12 pb-16">
-      {/* 1. Hero Carousel */}
-      <div className="container mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
+      {/* 1. BookMyShow Peek Hero Carousel */}
+      <div className="container mx-auto px-2 sm:px-4 pt-4 sm:pt-6">
         <HeroCarousel movies={featuredMovies} loading={loading} />
       </div>
 
@@ -110,7 +100,19 @@ export const Home = () => {
               />
             )}
 
-            {/* 3. Coming Soon Row */}
+            {/* 3. Top 10 Trending Section (with Ranked Badges) */}
+            {(loading || trendingMovies.length > 0) && (
+              <MovieRow
+                title="Top 10 Trending"
+                subtitle="Most booked blockbusters across India this week"
+                seeAllLink="/explore/movies?tab=now_showing"
+                movies={trendingMovies.slice(0, 10)}
+                isRanked={true}
+                loading={loading}
+              />
+            )}
+
+            {/* 4. Coming Soon Row */}
             <MovieRow
               title="Coming Soon"
               subtitle="Exciting upcoming releases to add to your watchlist"
@@ -153,9 +155,9 @@ export const Home = () => {
                 03
               </div>
               <div>
-                <h4 className="text-sm font-bold text-ink mb-1">Multi-City Cinema Discovery</h4>
+                <h4 className="text-sm font-bold text-ink mb-1">Tear-Line Cinema Tickets</h4>
                 <p className="text-xs text-muted leading-relaxed">
-                  Find theatres, IMAX 3D, 4DX, and real-time seating availability across India.
+                  Official BookMyShow-grade tickets with printable barcodes and instant gate verification.
                 </p>
               </div>
             </div>

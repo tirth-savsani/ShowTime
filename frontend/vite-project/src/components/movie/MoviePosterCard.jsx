@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Film } from 'lucide-react';
+import { Film, Star } from 'lucide-react';
 
-export const MoviePosterCard = ({ movie, className = '' }) => {
+export const MoviePosterCard = ({ movie, rank = null, className = '' }) => {
   const [imageError, setImageError] = useState(false);
 
   if (!movie) return null;
@@ -18,14 +18,36 @@ export const MoviePosterCard = ({ movie, className = '' }) => {
     ? movie.genres.join(', ')
     : movie.genres || '';
 
+  // Format vote count e.g. 124500 -> "124.5K"
+  const formatVotes = (count) => {
+    if (!count) return null;
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
+  // Format release date e.g. "2026-11-14" -> "14 Nov, 2026"
+  const formatReleaseDate = (dateStr) => {
+    if (!dateStr) return null;
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const isComingSoon = movie.status === 'coming_soon';
+  const releaseDateFormatted = formatReleaseDate(movie.releaseDate);
+
   return (
     <Link
       to={`/movies/${movieId}`}
-      className={`group flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md ${className}`}
+      className={`group flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg ${className}`}
       aria-label={`View movie ${title}`}
     >
       {/* Poster Image Container */}
-      <div className="relative w-full aspect-[2/3] rounded-md overflow-hidden bg-gray-100 shadow-card transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-card-hover">
+      <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-gray-100 shadow-card transition-all duration-300 group-hover:-translate-y-1.5 group-hover:shadow-card-hover">
         {!imageError && movie.posterUrl ? (
           <img
             src={movie.posterUrl}
@@ -43,24 +65,36 @@ export const MoviePosterCard = ({ movie, className = '' }) => {
           </div>
         )}
 
-        {/* Bottom Gradient Strip with Certificate & First Language */}
-        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-end px-2.5 pb-2 justify-between pointer-events-none">
-          <div className="flex items-center gap-1.5">
-            {certificate && (
-              <span className="bg-black/60 text-white border border-white/20 text-[10px] font-bold px-1.5 py-0.5 rounded-xs tracking-wider">
-                {certificate}
-              </span>
-            )}
-            {primaryLanguage && (
-              <span className="text-white text-[11px] font-medium drop-shadow-sm truncate max-w-[100px]">
-                {primaryLanguage}
-              </span>
-            )}
+        {/* Trending Rank Numeral (BookMyShow Top 10 style) */}
+        {rank !== null && (
+          <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-black/80 backdrop-blur-xs border border-white/20 text-white flex items-center justify-center text-xs font-black shadow-md">
+            #{rank}
           </div>
-          {movie.status === 'coming_soon' && (
-            <span className="text-[10px] uppercase font-bold text-primary bg-primary/20 border border-primary/40 px-1 rounded-xs">
-              Soon
+        )}
+
+        {/* Signature BookMyShow Rating Strip at Bottom of Poster */}
+        <div className="absolute inset-x-0 bottom-0 bg-black/85 backdrop-blur-xs px-2.5 py-1.5 text-white flex items-center justify-between text-xs z-10">
+          {isComingSoon ? (
+            <span className="text-[11px] font-bold text-primary-light truncate">
+              {releaseDateFormatted ? `Releasing ${releaseDateFormatted}` : 'Coming Soon'}
             </span>
+          ) : movie.rating ? (
+            <>
+              <div className="flex items-center gap-1 font-bold">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="text-xs">{Number(movie.rating).toFixed(1)}/10</span>
+              </div>
+              {movie.votes && (
+                <span className="text-[10px] text-gray-300 font-medium">
+                  {formatVotes(movie.votes)} Votes
+                </span>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
+              <span className="font-semibold uppercase">{certificate}</span>
+              {primaryLanguage && <span>• {primaryLanguage}</span>}
+            </div>
           )}
         </div>
       </div>
@@ -73,7 +107,7 @@ export const MoviePosterCard = ({ movie, className = '' }) => {
         >
           {title}
         </h3>
-        <p className="text-sm text-muted truncate" title={genres}>
+        <p className="text-xs text-muted truncate" title={genres}>
           {genres || 'Cinema'}
         </p>
       </div>

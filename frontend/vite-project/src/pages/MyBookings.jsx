@@ -4,6 +4,11 @@ import {
   Ticket,
   Film,
   Loader2,
+  QrCode,
+  Calendar,
+  Clock,
+  MapPin,
+  AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import bookingsApi from '../api/bookings.api.js';
@@ -60,10 +65,11 @@ export const MyBookings = () => {
   // Handle Cancellation confirmation
   const handleConfirmCancel = async () => {
     if (!cancelModalBooking) return;
+    const targetBookingId = cancelModalBooking.id || cancelModalBooking._id;
     setCancelling(true);
 
     try {
-      await bookingsApi.cancelBooking(cancelModalBooking.id);
+      await bookingsApi.cancelBooking(targetBookingId);
       toast.success('Booking cancelled. 100% refund initiated to your account.');
       setCancelModalBooking(null);
       fetchBookings();
@@ -108,7 +114,7 @@ export const MyBookings = () => {
           </div>
 
           {/* Tab Controls */}
-          <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-md self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 p-1 bg-gray-200/70 rounded-md self-start sm:self-auto">
             <button
               type="button"
               onClick={() => handleTabChange('upcoming')}
@@ -158,10 +164,10 @@ export const MyBookings = () => {
             {Array.from({ length: 3 }).map((_, idx) => (
               <div
                 key={`skel-booking-${idx}`}
-                className="bg-white rounded-lg border border-border p-5 space-y-4 shadow-card"
+                className="bg-white rounded-xl border border-border p-6 space-y-4 shadow-card"
               >
                 <div className="flex gap-4">
-                  <Skeleton className="w-16 h-24 rounded-md" />
+                  <Skeleton className="w-20 h-28 rounded-md" />
                   <div className="space-y-2 flex-1">
                     <Skeleton className="h-5 w-48" />
                     <Skeleton className="h-4 w-32" />
@@ -172,11 +178,13 @@ export const MyBookings = () => {
             ))}
           </div>
         ) : bookings.length > 0 ? (
-          // List of Bookings
-          <div className="space-y-4">
+          // List of Tear-Line Cinema Tickets
+          <div className="space-y-6">
             {bookings.map((b) => {
+              const bookingId = b.id || b._id;
               const snapshot = b.snapshot || {};
               const seatsList = (b.seats || []).map((s) => s.seatId || s).join(', ');
+              const qrImage = b.qrDataUrl || b.qrCode;
 
               // 2-hour cancellation cutoff check (Spec B6.6, C6)
               const showTime = new Date(snapshot.startTime).getTime();
@@ -187,9 +195,32 @@ export const MyBookings = () => {
 
               return (
                 <div
-                  key={b.id}
-                  className="bg-white rounded-lg border border-border shadow-card hover:shadow-card-hover transition-shadow overflow-hidden"
+                  key={bookingId}
+                  className="bg-white rounded-xl border border-border shadow-card hover:shadow-card-hover transition-all overflow-hidden"
                 >
+                  {/* Top Bar: Reference & Status */}
+                  <div className="bg-navy px-5 sm:px-6 py-3 text-white flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Ticket className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-mono font-bold tracking-wider">
+                        {b.bookingRef}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                        isConfirmed
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : isCancelled
+                          ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                          : 'bg-gray-500/20 text-gray-300'
+                      }`}
+                    >
+                      {b.status}
+                    </span>
+                  </div>
+
+                  {/* Main Ticket Body */}
                   <div className="p-5 sm:p-6 flex flex-col sm:flex-row gap-5 items-start">
                     {/* Poster Thumbnail */}
                     <div className="w-20 sm:w-24 aspect-[2/3] rounded-md overflow-hidden bg-gray-100 flex-shrink-0 border border-border shadow-xs">
@@ -208,102 +239,106 @@ export const MyBookings = () => {
 
                     {/* Booking Details */}
                     <div className="flex-1 space-y-2 min-w-0">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base sm:text-lg font-bold text-ink truncate">
-                            {snapshot.movieTitle}
-                          </h3>
-                          {snapshot.certificate && (
-                            <span className="px-1.5 py-0.2 rounded-xs border border-border text-[10px] font-bold text-muted uppercase">
-                              {snapshot.certificate}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Status Badge */}
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            isConfirmed
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : isCancelled
-                              ? 'bg-red-100 text-danger'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {b.status}
-                        </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-black text-ink truncate">
+                          {snapshot.movieTitle}
+                        </h3>
+                        {snapshot.certificate && (
+                          <span className="px-1.5 py-0.2 rounded-xs border border-border text-[10px] font-bold text-muted uppercase">
+                            {snapshot.certificate}
+                          </span>
+                        )}
                       </div>
 
-                      <p className="text-xs font-semibold text-primary">
+                      <p className="text-xs font-bold text-primary">
                         {snapshot.format || '2D'} • {snapshot.language || 'Hindi'}
                       </p>
 
-                      <div className="text-xs text-muted space-y-0.5 pt-0.5">
-                        <p className="font-semibold text-ink">{snapshot.theatreName}</p>
-                        <p className="text-gray-700 font-medium">
-                          {formatDateTime(snapshot.startTime)} • {snapshot.screenName}
+                      <div className="text-xs text-muted space-y-1 pt-1">
+                        <p className="font-semibold text-ink flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                          <span>{snapshot.theatreName}</span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-600 font-normal">{snapshot.screenName}</span>
                         </p>
-                        <p>
+                        <p className="text-gray-700 font-medium flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-muted flex-shrink-0" />
+                          <span>{formatDateTime(snapshot.startTime)}</span>
+                        </p>
+                        <div className="pt-0.5">
                           <span className="font-semibold text-ink">Seats: </span>
                           <span className="font-mono font-bold text-primary">
                             {seatsList}
                           </span>
-                        </p>
+                        </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border text-xs">
-                        <div>
-                          <span className="text-muted">Ref: </span>
-                          <span className="font-mono font-bold text-ink">
-                            {b.bookingRef}
-                          </span>
+                      {isCancelled && b.cancelReason && (
+                        <div className="mt-2 p-2 rounded-sm bg-red-50 border border-red-100 text-[11px] text-red-700 flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>Cancelled ({b.cancelReason}) • Full refund processed</span>
                         </div>
-                        <div>
-                          <span className="text-muted">Amount: </span>
-                          <span className="font-bold text-ink">₹{b.amount}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
+
+                    {/* QR Code Preview Thumbnail */}
+                    {qrImage && isConfirmed && (
+                      <div className="hidden sm:flex flex-col items-center p-2 bg-gray-50 rounded-md border border-border flex-shrink-0">
+                        <img
+                          src={qrImage}
+                          alt="QR Code"
+                          className="w-16 h-16 object-contain"
+                        />
+                        <span className="text-[9px] text-muted font-mono mt-1">E-TICKET</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dashed Tear Line with Circular Punch Notches */}
+                  <div className="relative border-b-2 border-dashed border-gray-300">
+                    <div className="absolute -left-3 -top-2.5 w-5 h-5 rounded-full bg-gray-50 border border-border" />
+                    <div className="absolute -right-3 -top-2.5 w-5 h-5 rounded-full bg-gray-50 border border-border" />
                   </div>
 
                   {/* Card Actions Footer */}
-                  <div className="bg-gray-50 px-5 sm:px-6 py-3 border-t border-border flex items-center justify-between gap-3">
-                    {/* View Ticket Link */}
-                    {isConfirmed && (
-                      <Link to={`/booking/${b.id}/confirmation`}>
-                        <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                          <Ticket className="w-3.5 h-3.5 text-primary" />
-                          <span>View Ticket</span>
-                        </Button>
-                      </Link>
-                    )}
+                  <div className="bg-gray-50/80 px-5 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-xs">
+                      <span className="text-muted">Total Paid: </span>
+                      <span className="text-base font-black text-ink">₹{b.amount}</span>
+                    </div>
 
-                    {/* Cancel Booking Action */}
-                    {isConfirmed && (
-                      <button
-                        type="button"
-                        onClick={() => setCancelModalBooking(b)}
-                        disabled={!canCancel}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-sm transition-colors cursor-pointer ${
-                          canCancel
-                            ? 'text-danger hover:bg-red-50'
-                            : 'text-gray-400 cursor-not-allowed opacity-60'
-                        }`}
-                        title={
-                          !canCancel
-                            ? 'Cancellations only allowed up to 2 hours before showtime.'
-                            : 'Cancel booking and initiate refund'
-                        }
-                      >
-                        Cancel Booking
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {/* Cancel Booking Action */}
+                      {isConfirmed && (
+                        <button
+                          type="button"
+                          onClick={() => setCancelModalBooking(b)}
+                          disabled={!canCancel}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-sm transition-colors cursor-pointer ${
+                            canCancel
+                              ? 'text-danger hover:bg-red-50'
+                              : 'text-gray-400 cursor-not-allowed opacity-60'
+                          }`}
+                          title={
+                            !canCancel
+                              ? 'Cancellations only allowed up to 2 hours before showtime.'
+                              : 'Cancel booking and initiate refund'
+                          }
+                        >
+                          Cancel Booking
+                        </button>
+                      )}
 
-                    {isCancelled && b.cancelReason && (
-                      <span className="text-xs text-muted">
-                        Reason: {b.cancelReason}
-                      </span>
-                    )}
+                      {/* View Ticket Link */}
+                      {isConfirmed && (
+                        <Link to={`/booking/${bookingId}/confirmation`}>
+                          <Button variant="primary" size="sm" className="gap-1.5 text-xs font-bold shadow-xs">
+                            <Ticket className="w-3.5 h-3.5" />
+                            <span>View Ticket</span>
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -327,7 +362,7 @@ export const MyBookings = () => {
             }
             actionLabel={tab === 'upcoming' ? 'Explore Movies' : undefined}
             onAction={tab === 'upcoming' ? () => navigate('/explore/movies') : undefined}
-            className="bg-white rounded-lg border border-border py-14 shadow-card"
+            className="bg-white rounded-xl border border-border py-14 shadow-card"
           />
         )}
       </div>

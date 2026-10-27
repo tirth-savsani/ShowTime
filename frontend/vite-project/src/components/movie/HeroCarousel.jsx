@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Ticket, Film, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ticket, Film, Sparkles, Star } from 'lucide-react';
 import Button from '../common/Button.jsx';
 
 export const HeroCarousel = ({ movies = [], loading = false }) => {
@@ -8,7 +8,7 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
 
-  const items = movies && movies.length > 0 ? movies.slice(0, 5) : [];
+  const items = movies && movies.length > 0 ? movies.slice(0, 7) : [];
 
   // Auto-slide every 5 seconds (paused on hover)
   useEffect(() => {
@@ -37,8 +37,8 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
   // Fallback when loading
   if (loading) {
     return (
-      <div className="w-full h-[220px] sm:h-[300px] md:h-[400px] bg-navy-light animate-pulse rounded-none sm:rounded-lg overflow-hidden flex items-center justify-center">
-        <Film className="w-12 h-12 text-white/20" />
+      <div className="w-full h-[220px] sm:h-[320px] md:h-[400px] bg-navy-light/40 animate-pulse rounded-xl overflow-hidden flex items-center justify-center">
+        <Film className="w-12 h-12 text-muted/30" />
       </div>
     );
   }
@@ -46,7 +46,7 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
   // Fallback when no featured movies available
   if (items.length === 0) {
     return (
-      <div className="relative w-full h-[200px] sm:h-[260px] md:h-[340px] bg-gradient-to-r from-navy via-navy-light to-navy rounded-none sm:rounded-lg overflow-hidden flex items-center px-6 sm:px-12 text-white">
+      <div className="relative w-full h-[220px] sm:h-[300px] md:h-[380px] bg-gradient-to-r from-navy via-navy-light to-navy rounded-xl overflow-hidden flex items-center px-6 sm:px-12 text-white">
         <div className="max-w-xl space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
@@ -68,110 +68,145 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
     );
   }
 
-  const currentMovie = items[currentIndex];
-  const movieId = currentMovie._id || currentMovie.id;
-  const languages = Array.isArray(currentMovie.languages)
-    ? currentMovie.languages.join(', ')
-    : currentMovie.languages || '';
-  const formats = Array.isArray(currentMovie.formats)
-    ? currentMovie.formats.join(' • ')
-    : currentMovie.formats || '2D';
-
   return (
     <div
-      className="relative w-full h-[240px] sm:h-[320px] md:h-[400px] bg-black rounded-none sm:rounded-lg overflow-hidden select-none group"
+      className="relative w-full overflow-hidden select-none py-2"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      {/* Slides */}
-      {items.map((movie, idx) => {
-        const isActive = idx === currentIndex;
-        const bgImg = movie.backdropUrl || movie.posterUrl;
-        return (
-          <div
-            key={movie._id || movie.id || idx}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-            }`}
-          >
-            {/* Backdrop Image */}
-            {bgImg ? (
-              <img
-                src={bgImg}
-                alt={movie.title}
-                className="w-full h-full object-cover object-center"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-r from-navy to-navy-light" />
-            )}
+      {/* 3-Slide Peek Track */}
+      <div
+        className="flex items-center transition-transform duration-500 ease-out"
+        style={{
+          transform: `translateX(calc(10% - ${currentIndex * 80}% - ${currentIndex * 16}px))`,
+        }}
+      >
+        {items.map((movie, idx) => {
+          const isActive = idx === currentIndex;
+          const movieId = movie._id || movie.id;
+          const bgImg = movie.backdropUrl || movie.posterUrl;
+          const languages = Array.isArray(movie.languages)
+            ? movie.languages.join(', ')
+            : movie.languages || '';
+          const formats = Array.isArray(movie.formats)
+            ? movie.formats.join(' • ')
+            : movie.formats || '2D';
 
-            {/* Dark Multi-stop Gradient Overlays for Readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent sm:hidden" />
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={movieId || idx}
+              onClick={() => {
+                if (!isActive) setCurrentIndex(idx);
+              }}
+              className={`w-[80%] shrink-0 mr-4 h-[220px] sm:h-[320px] md:h-[400px] rounded-xl overflow-hidden relative transition-all duration-500 ease-out cursor-pointer ${
+                isActive
+                  ? 'opacity-100 scale-100 shadow-2xl z-10 cursor-default'
+                  : 'opacity-50 scale-95 hover:opacity-75'
+              }`}
+            >
+              {/* Slide Backdrop Image */}
+              {bgImg ? (
+                <img
+                  src={bgImg}
+                  alt={movie.title}
+                  className="w-full h-full object-cover object-center"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-navy to-navy-light" />
+              )}
 
-      {/* Slide Content Overlay */}
-      <div className="absolute inset-0 z-20 flex items-center px-6 sm:px-12 md:px-16 pointer-events-none">
-        <div className="max-w-xl text-white space-y-2 sm:space-y-3 pointer-events-auto">
-          {/* Format / Certificate Pills */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {currentMovie.certificate && (
-              <span className="px-2 py-0.5 rounded-xs bg-white/20 backdrop-blur-xs font-bold uppercase tracking-wider text-[11px]">
-                {currentMovie.certificate}
-              </span>
-            )}
-            {formats && (
-              <span className="px-2 py-0.5 rounded-xs bg-primary/80 font-semibold text-[11px]">
-                {formats}
-              </span>
-            )}
-            {languages && (
-              <span className="text-gray-300 text-xs hidden sm:inline">
-                {languages}
-              </span>
-            )}
-          </div>
+              {/* Gradient Overlays for Readability */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent sm:hidden" />
 
-          {/* Title */}
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight drop-shadow-md">
-            {currentMovie.title}
-          </h2>
+              {/* Inactive Overlay Tint */}
+              {!isActive && (
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-[0.5px]" />
+              )}
 
-          {/* Description Preview */}
-          {currentMovie.description && (
-            <p className="text-xs sm:text-sm text-gray-200 line-clamp-2 max-w-lg leading-relaxed drop-shadow">
-              {currentMovie.description}
-            </p>
-          )}
-
-          {/* Action Button */}
-          <div className="pt-1 sm:pt-2">
-            <Link to={`/movies/${movieId}`}>
-              <Button
-                variant="primary"
-                size="md"
-                className="gap-2 shadow-lg hover:shadow-primary/40 font-bold"
+              {/* Content Overlay */}
+              <div
+                className={`absolute inset-0 z-20 flex items-center px-6 sm:px-12 md:px-14 transition-opacity duration-300 ${
+                  isActive ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
               >
-                <Ticket className="w-4 h-4" />
-                Book Tickets
-              </Button>
-            </Link>
-          </div>
-        </div>
+                <div className="max-w-xl text-white space-y-2 sm:space-y-3">
+                  {/* Format & Certificate Pills */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {movie.certificate && (
+                      <span className="px-2 py-0.5 rounded-xs bg-white/20 backdrop-blur-xs font-bold uppercase tracking-wider text-[10px]">
+                        {movie.certificate}
+                      </span>
+                    )}
+                    {formats && (
+                      <span className="px-2 py-0.5 rounded-xs bg-primary/90 font-semibold text-[10px] uppercase">
+                        {formats}
+                      </span>
+                    )}
+                    {languages && (
+                      <span className="text-gray-300 text-xs hidden sm:inline">
+                        {languages}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight drop-shadow-md">
+                    {movie.title}
+                  </h2>
+
+                  {/* Star Rating Badge */}
+                  {movie.rating ? (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="flex items-center gap-1 font-bold text-amber-400 bg-black/50 px-2 py-1 rounded-sm border border-white/10">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span>{Number(movie.rating).toFixed(1)}/10</span>
+                      </span>
+                      {movie.votes && (
+                        <span className="text-gray-300 text-xs">
+                          ({Number(movie.votes).toLocaleString('en-IN')} Votes)
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {/* Description Preview */}
+                  {movie.description && (
+                    <p className="text-xs sm:text-sm text-gray-200 line-clamp-2 max-w-lg leading-relaxed drop-shadow">
+                      {movie.description}
+                    </p>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="pt-1 sm:pt-2">
+                    <Link to={`/movies/${movieId}`}>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        className="gap-2 shadow-lg hover:shadow-primary/40 font-bold px-5"
+                      >
+                        <Ticket className="w-4 h-4" />
+                        Book Tickets
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Left / Right Nav Arrows (Desktop group hover) */}
+      {/* Left / Right Chevron Controls */}
       {items.length > 1 && (
         <>
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous Slide"
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/75 text-white items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 cursor-pointer"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 hover:bg-black/85 text-white flex items-center justify-center transition-all backdrop-blur-xs shadow-lg hover:scale-105 cursor-pointer"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -179,7 +214,7 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
             type="button"
             onClick={handleNext}
             aria-label="Next Slide"
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/75 text-white items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 cursor-pointer"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/50 hover:bg-black/85 text-white flex items-center justify-center transition-all backdrop-blur-xs shadow-lg hover:scale-105 cursor-pointer"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
@@ -188,7 +223,7 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
 
       {/* Indicator Dots */}
       {items.length > 1 && (
-        <div className="absolute bottom-3 sm:bottom-4 inset-x-0 z-30 flex items-center justify-center gap-1.5 sm:gap-2">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-3">
           {items.map((_, idx) => (
             <button
               key={`dot-${idx}`}
@@ -198,7 +233,7 @@ export const HeroCarousel = ({ movies = [], loading = false }) => {
               className={`transition-all duration-300 rounded-full cursor-pointer ${
                 idx === currentIndex
                   ? 'w-6 h-2 bg-primary'
-                  : 'w-2 h-2 bg-white/50 hover:bg-white/80'
+                  : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
               }`}
             />
           ))}

@@ -10,6 +10,7 @@ export const MovieRow = ({
   seeAllLink,
   movies = [],
   loading = false,
+  isRanked = false,
   className = '',
 }) => {
   const scrollContainerRef = useRef(null);
@@ -116,12 +117,12 @@ export const MovieRow = ({
               </div>
             ))
           ) : (
-            movies.map((movie) => (
+            movies.map((movie, idx) => (
               <div
                 key={movie._id || movie.id}
                 className="w-[140px] sm:w-[160px] md:w-[220px] flex-shrink-0 snap-start"
               >
-                <MoviePosterCard movie={movie} />
+                <MoviePosterCard movie={movie} rank={isRanked ? idx + 1 : null} />
               </div>
             ))
           )}

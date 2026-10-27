@@ -33,7 +33,7 @@ export const DateStrip = ({ selectedDate, onSelectDate, className = '' }) => {
 
   return (
     <div
-      className={`sticky top-16 z-30 bg-white border-b border-border shadow-xs ${className}`}
+      className={`sticky top-16 md:top-[104px] z-30 bg-white border-b border-border shadow-xs ${className}`}
     >
       <div className="container mx-auto px-4 sm:px-6 py-2.5">
         <div
