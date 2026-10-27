@@ -126,8 +126,10 @@ const movieSchema = new mongoose.Schema(
     },
     posterPublicId: {
       type: String,
-      required: [true, 'Poster Cloudinary public ID is required'],
       trim: true,
+      default: function () {
+        return this.title ? `showtime/posters/${this.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : 'showtime/posters/default';
+      },
     },
     backdropUrl: {
       type: String,
@@ -140,6 +142,21 @@ const movieSchema = new mongoose.Schema(
       default: null,
     },
     trailerUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 10,
+      default: null,
+    },
+    votes: {
+      type: Number,
+      default: 0,
+    },
+    director: {
       type: String,
       trim: true,
       default: null,

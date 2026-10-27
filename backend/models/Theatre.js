@@ -4,12 +4,13 @@ export const toTitleCase = (str) => {
   if (!str || typeof str !== 'string') return str;
   return str
     .trim()
-    .split(/\s+/)
+    .split(/(\s+|-)/)
     .map((word) => {
+      if (word === '-' || /^\s+$/.test(word)) return word;
       if (word.toUpperCase() === 'NCR') return 'NCR';
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
-    .join(' ');
+    .join('');
 };
 
 const theatreSchema = new mongoose.Schema(

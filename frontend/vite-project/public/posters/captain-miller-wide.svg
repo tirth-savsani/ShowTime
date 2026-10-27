@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bgWide" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080101" />
+      <stop offset="45%" stop-color="#380a0a" />
+      <stop offset="100%" stop-color="#140303" />
+    </linearGradient>
+    <radialGradient id="wideGlow" cx="75%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#e50914" stop-opacity="0.5" />
+      <stop offset="70%" stop-color="#380a0a" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="fadeLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#050505" stop-opacity="0.95" />
+      <stop offset="40%" stop-color="#050505" stop-opacity="0.8" />
+      <stop offset="75%" stop-color="#050505" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#050505" stop-opacity="0.1" />
+    </linearGradient>
+    <linearGradient id="artWide" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f84464" />
+      <stop offset="100%" stop-color="#ff9800" />
+    </linearGradient>
+    <filter id="wideShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000000" flood-opacity="0.9" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1280" height="720" fill="url(#bgWide)" />
+  <rect width="1280" height="720" fill="url(#wideGlow)" />
+
+  <!-- Right Hero Artwork Visual -->
+  <g transform="translate(920, 360) scale(2.6)" filter="url(#wideShadow)">
+    
+        <path d="M0 -70 C20 -40, 50 -20, 35 30 C20 70, -30 70, -35 25 C-40 -15, -10 -40, 0 -70 Z" fill="url(#artGlow)" opacity="0.9" />
+        <path d="M0 -30 C10 -10, 25 5, 18 35 C10 55, -15 55, -18 30 C-20 10, -5 -10, 0 -30 Z" fill="#ff9800" opacity="0.8" />
+        <circle cx="0" cy="15" r="14" fill="#ffffff" opacity="0.9" />
+      
+  </g>
+  <circle cx="920" cy="360" r="280" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.08" stroke-dasharray="8,12" />
+  <circle cx="920" cy="360" r="340" fill="none" stroke="#f84464" stroke-width="1" stroke-opacity="0.1" />
+
+  <!-- Left Dark Fade for Detail Page Text Overlay -->
+  <rect width="1280" height="720" fill="url(#fadeLeft)" />
+
+  <!-- Content Block on Left -->
+  <g transform="translate(80, 150)" filter="url(#wideShadow)">
+    <!-- Certificate and Formats -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="50" height="30" rx="6" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="1" stroke-opacity="0.4" />
+      <text x="25" y="21" fill="#ffffff" font-size="16" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle">UA</text>
+
+      <rect x="62" y="0" width="130" height="30" rx="6" fill="#f84464" fill-opacity="0.2" stroke="#f84464" stroke-width="1" stroke-opacity="0.5" />
+      <text x="127" y="20" fill="#f84464" font-size="13" font-weight="800" font-family="system-ui, sans-serif" text-anchor="middle">2D • IMAX</text>
+
+      <text x="210" y="21" fill="#aaaaaa" font-size="15" font-weight="700" font-family="system-ui, sans-serif">157 MINS • Tamil, Telugu, Hindi</text>
+    </g>
+
+    <!-- Main Title -->
+    <text x="0" y="90" fill="#ffffff" font-size="52" font-weight="900" font-family="system-ui, -apple-system, sans-serif" letter-spacing="0.5">CAPTAIN MILLER</text>
+
+    <!-- Genres -->
+    <text x="0" y="145" fill="#f84464" font-size="18" font-weight="800" font-family="system-ui, sans-serif" letter-spacing="1.5">ACTION • ADVENTURE • DRAMA</text>
+
+    <!-- Description synopsis -->
+    <foreignObject x="0" y="170" width="620" height="110">
+      <p xmlns="http://www.w3.org/1999/xhtml" style="color: #cccccc; font-family: system-ui, sans-serif; font-size: 16px; line-height: 1.5; margin: 0;">
+        In 1930s British India, a renegade former colonial soldier turned rebel warrior leads daring raids against oppressor forces to safeguard his people’s heritage.
+      </p>
+    </foreignObject>
+
+    <!-- Rating / Release Bar -->
+    <g transform="translate(0, 310)">
+      
+        <rect x="0" y="0" width="180" height="46" rx="8" fill="#e50914" />
+        <text x="90" y="30" fill="#ffffff" font-size="20" font-weight="900" font-family="system-ui, sans-serif" text-anchor="middle">★ 7.9 / 10</text>
+        <text x="200" y="30" fill="#cccccc" font-size="16" font-weight="600" font-family="system-ui, sans-serif">81k+ reviews on ShowTime</text>
+      
+    </g>
+
+    <!-- Credits -->
+    <g transform="translate(0, 400)">
+      <text x="0" y="0" fill="#888888" font-size="14" font-weight="700" font-family="system-ui, sans-serif">DIRECTED BY: <tspan fill="#ffffff">Arun Matheswaran</tspan></text>
+      <text x="0" y="26" fill="#888888" font-size="14" font-weight="700" font-family="system-ui, sans-serif">CAST: <tspan fill="#dddddd">Dhanush, Shiva Rajkumar, Priyanka Arul Mohan, Sundeep Kishan</tspan></text>
+    </g>
+  </g>
+</svg>

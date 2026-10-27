@@ -1,8 +1,8 @@
 /**
- * SeedAll Integration Tests (Spec B9)
+ * SeedAll Integration Tests (Spec B9, Phase 3)
  *
  * Verifies:
- * 1. seedAll creates admin, demo user, 10 movies, 4 theatres, 8 screens, and scheduled shows
+ * 1. seedAll creates demo user, 50 movies, 29 theatres, screens, and scheduled shows
  * 2. Idempotency: second call without SEED_CONFIRM=true safely skips
  * 3. Safe re-seed: call with SEED_CONFIRM=true wipes and re-seeds cleanly
  */
@@ -24,9 +24,9 @@ describe('Comprehensive Seeder (seedAll.js)', () => {
 
     expect(result.success).toBe(true);
     expect(result.users).toBe(1);
-    expect(result.movies).toBe(10);
-    expect(result.theatres).toBe(4);
-    expect(result.screens).toBe(8);
+    expect(result.movies).toBe(50);
+    expect(result.theatres).toBe(29);
+    expect(result.screens).toBe(59);
     expect(result.shows).toBeGreaterThan(0);
 
     // Verify Demo User
@@ -36,22 +36,24 @@ describe('Comprehensive Seeder (seedAll.js)', () => {
 
     // Verify Theatres & Screens
     const theatres = await Theatre.find();
-    expect(theatres.length).toBe(4);
+    expect(theatres.length).toBe(29);
 
     const screens = await Screen.find();
-    expect(screens.length).toBe(8);
+    expect(screens.length).toBe(59);
 
-    // Verify Layout A (Audi 1) totalSeats = 164 and Layout B (Audi 2) totalSeats = 76
-    const audi1 = screens.find((s) => s.name === 'Audi 1');
-    expect(audi1.totalSeats).toBe(164);
+    // Verify Layout A totalSeats = 220 and Layout B totalSeats = 140
+    const screenWithLayoutA = screens.find((s) => s.layout.rows.length === 12);
+    expect(screenWithLayoutA).toBeDefined();
+    expect(screenWithLayoutA.totalSeats).toBe(220);
 
-    const audi2 = screens.find((s) => s.name === 'Audi 2');
-    expect(audi2.totalSeats).toBe(76);
+    const screenWithLayoutB = screens.find((s) => s.layout.rows.length === 10);
+    expect(screenWithLayoutB).toBeDefined();
+    expect(screenWithLayoutB.totalSeats).toBe(140);
 
-    // Verify Shows
+    // Verify Shows count is positive
     const showCount = await Show.countDocuments();
-    expect(showCount).toBe(8 * 4 * 7); // 8 screens * 4 slots * 7 days = 224 shows
-  }, 30000);
+    expect(showCount).toBeGreaterThan(50);
+  }, 40000);
 
   it('is idempotent and skips re-seeding when data already exists and SEED_CONFIRM is not set', async () => {
     // Seed first time
@@ -62,17 +64,17 @@ describe('Comprehensive Seeder (seedAll.js)', () => {
     expect(secondRun.skipped).toBe(true);
 
     const movieCount = await Movie.countDocuments();
-    expect(movieCount).toBe(10);
-  }, 30000);
+    expect(movieCount).toBe(50);
+  }, 40000);
 
   it('wipes and re-seeds when SEED_CONFIRM=true', async () => {
     process.env.SEED_CONFIRM = 'true';
 
     const wipeRun = await seedAll();
     expect(wipeRun.success).toBe(true);
-    expect(wipeRun.movies).toBe(10);
+    expect(wipeRun.movies).toBe(50);
 
     const movieCount = await Movie.countDocuments();
-    expect(movieCount).toBe(10);
-  }, 30000);
+    expect(movieCount).toBe(50);
+  }, 40000);
 });

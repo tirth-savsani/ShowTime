@@ -18,6 +18,9 @@ export const serializeMovieCard = (movie) => {
     posterUrl: doc.posterUrl,
     backdropUrl: doc.backdropUrl || doc.posterUrl,
     status: doc.status,
+    rating: doc.rating ?? null,
+    votes: doc.votes ?? 0,
+    director: doc.director || null,
   };
 };
 
@@ -40,6 +43,9 @@ export const serializeMovieDetail = (movie) => {
     trailerUrl: doc.trailerUrl || null,
     cast: doc.cast || [],
     status: doc.status,
+    rating: doc.rating ?? null,
+    votes: doc.votes ?? 0,
+    director: doc.director || null,
     createdAt: doc.createdAt ? new Date(doc.createdAt).toISOString() : null,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : null,
   };
