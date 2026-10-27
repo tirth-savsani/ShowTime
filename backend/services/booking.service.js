@@ -401,22 +401,30 @@ export const cancelBooking = async (
     );
   }
 
-  // User cancel time-window check: must be > 2 hours before showtime (Spec B6.6)
+  // User cancel time-window check: must be > 24 hours before showtime (Spec B6.6, updated to 24h)
   const showTime = new Date(booking.snapshot.startTime).getTime();
   const cutoffMs = CANCEL_CUTOFF_HOURS * 60 * 60 * 1000;
   if (showTime - Date.now() <= cutoffMs) {
     throw new AppError(
-      'Cancellation window closed (showtime is within 2 hours)',
+      'Cancellation window closed (cancellations are only permitted up to 24 hours before showtime)',
       409,
       'CANCEL_WINDOW_CLOSED'
     );
   }
 
-  // Cancellation in transaction
+  // Cancellation in transaction: delete BookedSeat records so seats become available again immediately
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
+      // 1. Delete BookedSeat records so seats are freed for booking
       await BookedSeat.deleteMany({ booking: booking._id }, { session });
+
+      // 2. Also delete any active holds on these seats to ensure immediate availability
+      const seatIds = (booking.seats || []).map((s) => s.seatId);
+      if (seatIds.length > 0) {
+        await SeatHold.deleteMany({ show: booking.show, seatId: { $in: seatIds } }, { session });
+      }
+
       booking.status = BOOKING_STATUSES.CANCELLED;
       booking.cancelledAt = new Date();
       booking.cancelReason = reason || CANCEL_REASONS.USER;

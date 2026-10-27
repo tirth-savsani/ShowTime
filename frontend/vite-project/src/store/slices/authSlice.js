@@ -1,13 +1,49 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authApi from '../../api/auth.api.js';
 
+// Safe localStorage session helpers
+const SESSION_KEY = 'showtime_user_session';
+
+const getSavedSession = () => {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveSession = (user) => {
+  try {
+    if (user && (user.id || user._id)) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    }
+  } catch {
+    // Ignore storage quota / incognito errors
+  }
+};
+
+const clearSession = () => {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // Ignore
+  }
+};
+
 export const fetchMe = createAsyncThunk(
   'auth/fetchMe',
   async (_, { rejectWithValue }) => {
     try {
-      const user = await authApi.getMe();
+      const res = await authApi.getMe();
+      const user = res?.user || res;
+      saveSession(user);
       return user;
     } catch (err) {
+      // If 401 or user not found, clear stale cached session
+      if (err?.status === 401 || err?.status === 403 || err?.status === 404) {
+        clearSession();
+      }
       return rejectWithValue(err);
     }
   }
@@ -17,7 +53,9 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      const user = await authApi.login(credentials);
+      const res = await authApi.login(credentials);
+      const user = res?.user || res;
+      saveSession(user);
       return user;
     } catch (err) {
       return rejectWithValue(err);
@@ -29,7 +67,9 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (payload, { rejectWithValue }) => {
     try {
-      const user = await authApi.register(payload);
+      const res = await authApi.register(payload);
+      const user = res?.user || res;
+      saveSession(user);
       return user;
     } catch (err) {
       return rejectWithValue(err);
@@ -42,16 +82,20 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await authApi.logout();
+      clearSession();
       return null;
     } catch (err) {
+      clearSession();
       return rejectWithValue(err);
     }
   }
 );
 
+const savedUser = getSavedSession();
+
 const initialState = {
-  user: null,
-  status: 'idle', // 'idle' | 'loading' | 'authenticated' | 'guest'
+  user: savedUser,
+  status: savedUser ? 'authenticated' : 'idle', // 'idle' | 'loading' | 'authenticated' | 'guest'
   error: null,
   authModal: {
     open: false,
@@ -88,6 +132,7 @@ const authSlice = createSlice({
     },
     // Triggered by axios 401 interceptor
     handleUnauthorized: (state) => {
+      clearSession();
       state.user = null;
       state.status = 'guest';
       state.authModal.open = true;
@@ -98,16 +143,22 @@ const authSlice = createSlice({
     // fetchMe
     builder
       .addCase(fetchMe.pending, (state) => {
-        state.status = 'loading';
+        // Keep existing saved user while validating session in background
+        if (!state.user) {
+          state.status = 'loading';
+        }
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.user = action.payload;
         state.status = 'authenticated';
         state.error = null;
       })
-      .addCase(fetchMe.rejected, (state) => {
-        state.user = null;
-        state.status = 'guest';
+      .addCase(fetchMe.rejected, (state, action) => {
+        // If 401 unauthorized, reset to guest
+        if (action.payload?.status === 401 || action.payload?.status === 403 || action.payload?.status === 404) {
+          state.user = null;
+          state.status = 'guest';
+        }
       });
 
     // login

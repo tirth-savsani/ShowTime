@@ -60,7 +60,7 @@ export const env = {
   PORT: parseInt(process.env.PORT, 10) || 8084,
   dbURL: process.env.dbURL,
   JWT_SECRET: process.env.JWT_SECRET || 'default-secret-key-change-in-production',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '30d',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',

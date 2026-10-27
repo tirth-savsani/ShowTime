@@ -186,11 +186,11 @@ export const MyBookings = () => {
               const seatsList = (b.seats || []).map((s) => s.seatId || s).join(', ');
               const qrImage = b.qrDataUrl || b.qrCode;
 
-              // 2-hour cancellation cutoff check (Spec B6.6, C6)
+              // 24-hour cancellation cutoff check
               const showTime = new Date(snapshot.startTime).getTime();
               const isConfirmed = b.status === 'confirmed';
               const isCancelled = b.status === 'cancelled';
-              const isWithinCutoff = showTime - Date.now() <= 2 * 60 * 60 * 1000;
+              const isWithinCutoff = showTime - Date.now() <= 24 * 60 * 60 * 1000;
               const canCancel = isConfirmed && !isWithinCutoff;
 
               return (
@@ -321,7 +321,7 @@ export const MyBookings = () => {
                           }`}
                           title={
                             !canCancel
-                              ? 'Cancellations only allowed up to 2 hours before showtime.'
+                              ? 'Cancellations only allowed up to 24 hours before showtime.'
                               : 'Cancel booking and initiate refund'
                           }
                         >
@@ -379,7 +379,7 @@ export const MyBookings = () => {
             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-xs text-red-800 space-y-1">
               <p className="font-bold">Refund Policy Notice:</p>
               <p>
-                100% of <span className="font-bold">₹{cancelModalBooking.amount}</span> will be refunded to your original payment method within 5-7 working days via Razorpay.
+                100% of <span className="font-bold">₹{cancelModalBooking.amount}</span> will be refunded to your original payment method within 5-7 working days via Razorpay. Cancellations are permitted up to 24 hours before showtime.
               </p>
             </div>
 

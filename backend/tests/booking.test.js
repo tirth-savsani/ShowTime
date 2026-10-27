@@ -118,8 +118,8 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
       isActive: true,
     });
 
-    // 4. Create Show (starts 24 hours in the future)
-    const startTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // 4. Create Show (starts 48 hours in the future, well above 24h cutoff)
+    const startTime = new Date(Date.now() + 48 * 60 * 60 * 1000);
     const endTime = new Date(startTime.getTime() + (152 + 15) * 60 * 1000);
     sampleShow = await Show.create({
       movie: sampleMovie._id,
@@ -401,8 +401,8 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
   });
 
   describe('Cancellation and Cutoff Rules (POST /api/bookings/:id/cancel)', () => {
-    it('cancels booking and issues refund when show is more than 2 hours away', async () => {
-      // Show is 24 hours away (> 2h cutoff)
+    it('cancels booking, issues refund, and releases seats as AVAILABLE when show is more than 24 hours away', async () => {
+      // Show is 48 hours away (> 24h cutoff)
       await request(app)
         .post(`/api/shows/${sampleShow._id}/hold`)
         .set('Cookie', user1Cookie)
@@ -427,6 +427,11 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
           razorpay_signature: generateSignature(orderId, paymentId),
         });
 
+      // Verify seat is initially BOOKED
+      const seatMapBefore = await request(app).get(`/api/shows/${sampleShow._id}/seats`);
+      const a1Before = seatMapBefore.body.data.seats.find((s) => s.id === 'A1');
+      expect(a1Before.status).toBe('BOOKED');
+
       // User cancels booking
       const cancelRes = await request(app)
         .post(`/api/bookings/${bookingId}/cancel`)
@@ -437,14 +442,19 @@ describe('Booking, Razorpay Payment and Cancellation Module (Spec B3, B4, B6.4, 
       expect(cancelRes.body.data.status).toBe(BOOKING_STATUSES.CANCELLED);
       expect(cancelRes.body.data.refund.status).toBe('PROCESSED');
 
-      // BookedSeat is deleted, seat becomes free
+      // BookedSeat is deleted, seat count in DB is 0
       const bookedCount = await BookedSeat.countDocuments({ booking: bookingId });
       expect(bookedCount).toBe(0);
+
+      // Verify seat is now AVAILABLE again on seat map
+      const seatMapAfter = await request(app).get(`/api/shows/${sampleShow._id}/seats`);
+      const a1After = seatMapAfter.body.data.seats.find((s) => s.id === 'A1');
+      expect(a1After.status).toBe('AVAILABLE');
     });
 
-    it('rejects cancellation with 409 CANCEL_WINDOW_CLOSED when within 2 hours of showtime', async () => {
-      // Create show 1 hour in the future
-      const closeStartTime = new Date(Date.now() + 60 * 60 * 1000);
+    it('rejects cancellation with 409 CANCEL_WINDOW_CLOSED when within 24 hours of showtime', async () => {
+      // Create show 12 hours in the future (within 24 hours cutoff)
+      const closeStartTime = new Date(Date.now() + 12 * 60 * 60 * 1000);
       const closeEndTime = new Date(closeStartTime.getTime() + 167 * 60 * 1000);
       const closeShow = await Show.create({
         movie: sampleMovie._id,
