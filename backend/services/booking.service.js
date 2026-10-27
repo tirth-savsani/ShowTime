@@ -427,7 +427,8 @@ export const cancelBooking = async (
 
       booking.status = BOOKING_STATUSES.CANCELLED;
       booking.cancelledAt = new Date();
-      booking.cancelReason = reason || CANCEL_REASONS.USER;
+      const validReasons = Object.values(CANCEL_REASONS);
+      booking.cancelReason = reason && validReasons.includes(reason) ? reason : CANCEL_REASONS.USER;
       await booking.save({ session });
     });
   } finally {
@@ -436,13 +437,25 @@ export const cancelBooking = async (
 
   // Issue refund via Razorpay after transaction commit (Spec B6.6)
   if (booking.razorpay?.paymentId) {
-    const refundRes = await paymentService.refund(
-      booking.razorpay.paymentId,
-      booking.amount * 100,
-      { bookingRef: booking.bookingRef }
-    );
-    booking.refund = refundRes;
-    await booking.save();
+    try {
+      const refundRes = await paymentService.refund(
+        booking.razorpay.paymentId,
+        booking.amount * 100,
+        { bookingRef: booking.bookingRef }
+      );
+      booking.refund = refundRes;
+      await booking.save();
+    } catch (refundErr) {
+      console.warn('[Cancellation refund warning]:', refundErr.message);
+      booking.refund = {
+        id: null,
+        amount: booking.amount,
+        status: REFUND_STATUSES.FAILED,
+        at: new Date(),
+        error: refundErr.message,
+      };
+      await booking.save();
+    }
   }
 
   return ticketService.buildTicket(booking);

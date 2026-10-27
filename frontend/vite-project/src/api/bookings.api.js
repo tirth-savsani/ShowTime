@@ -11,7 +11,7 @@ export const bookingsApi = {
     api.get('/api/bookings/my', { params }),
   getBookingById: (id) =>
     api.get(`/api/bookings/${id}`),
-  cancelBooking: (id, reason = 'Customer cancelled') =>
+  cancelBooking: (id, reason = 'USER') =>
     api.post(`/api/bookings/${id}/cancel`, { reason }),
 };
 

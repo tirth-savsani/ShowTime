@@ -98,16 +98,15 @@ const bookingSchema = new mongoose.Schema(
       amount: { type: Number, default: 0 },
       status: {
         type: String,
-        enum: Object.values(REFUND_STATUSES),
         default: REFUND_STATUSES.NONE,
       },
       at: { type: Date, default: null },
+      error: { type: String, default: null },
     },
     confirmedAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
     cancelReason: {
       type: String,
-      enum: [...Object.values(CANCEL_REASONS), null],
       default: null,
     },
     snapshot: {
