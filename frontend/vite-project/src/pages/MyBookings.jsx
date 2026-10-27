@@ -9,6 +9,8 @@ import {
   Clock,
   MapPin,
   AlertCircle,
+  XCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import bookingsApi from '../api/bookings.api.js';
@@ -151,6 +153,19 @@ export const MyBookings = () => {
           </div>
         </div>
 
+        {/* Cancellation Notice Banner */}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3.5 text-xs text-emerald-800 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <div>
+              <span className="font-bold">100% Refund Guarantee: </span>
+              <span>
+                Confirmed bookings can be cancelled directly up to 24 hours before showtime for an instant full refund to your original payment method.
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Content Area */}
         {error ? (
           <ErrorState
@@ -186,10 +201,13 @@ export const MyBookings = () => {
               const seatsList = (b.seats || []).map((s) => s.seatId || s).join(', ');
               const qrImage = b.qrDataUrl || b.qrCode;
 
+              // Case-insensitive status check
+              const statusUpper = String(b.status || '').toUpperCase();
+              const isConfirmed = statusUpper === 'CONFIRMED';
+              const isCancelled = statusUpper === 'CANCELLED';
+
               // 24-hour cancellation cutoff check
               const showTime = new Date(snapshot.startTime).getTime();
-              const isConfirmed = b.status === 'confirmed';
-              const isCancelled = b.status === 'cancelled';
               const isWithinCutoff = showTime - Date.now() <= 24 * 60 * 60 * 1000;
               const canCancel = isConfirmed && !isWithinCutoff;
 
@@ -307,37 +325,37 @@ export const MyBookings = () => {
                       <span className="text-base font-black text-ink">₹{b.amount}</span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       {/* Cancel Booking Action */}
                       {isConfirmed && (
-                        <button
-                          type="button"
+                        <Button
+                          variant={canCancel ? "danger" : "outline"}
+                          size="sm"
                           onClick={() => setCancelModalBooking(b)}
                           disabled={!canCancel}
-                          className={`text-xs font-semibold px-3 py-1.5 rounded-sm transition-colors cursor-pointer ${
+                          className={`gap-1.5 text-xs font-bold ${
                             canCancel
-                              ? 'text-danger hover:bg-red-50'
-                              : 'text-gray-400 cursor-not-allowed opacity-60'
+                              ? 'bg-red-600 hover:bg-red-700 text-white shadow-xs'
+                              : 'text-gray-400 border-gray-300 cursor-not-allowed opacity-75'
                           }`}
                           title={
                             !canCancel
                               ? 'Cancellations only allowed up to 24 hours before showtime.'
-                              : 'Cancel booking and initiate refund'
+                              : 'Cancel booking and initiate instant 100% refund'
                           }
                         >
-                          Cancel Booking
-                        </button>
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>{canCancel ? 'Cancel Booking' : 'Non-Refundable (< 24h)'}</span>
+                        </Button>
                       )}
 
                       {/* View Ticket Link */}
-                      {isConfirmed && (
-                        <Link to={`/booking/${bookingId}/confirmation`}>
-                          <Button variant="primary" size="sm" className="gap-1.5 text-xs font-bold shadow-xs">
-                            <Ticket className="w-3.5 h-3.5" />
-                            <span>View Ticket</span>
-                          </Button>
-                        </Link>
-                      )}
+                      <Link to={`/booking/${bookingId}/confirmation`}>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold shadow-xs hover:border-primary hover:text-primary">
+                          <Ticket className="w-3.5 h-3.5 text-primary" />
+                          <span>View Ticket</span>
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>

@@ -8,9 +8,14 @@ import {
   Loader2,
   Ticket as TicketIcon,
   Film,
+  XCircle,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import bookingsApi from '../api/bookings.api.js';
 import Button from '../components/common/Button.jsx';
+import Modal from '../components/common/Modal.jsx';
 import ErrorState from '../components/common/ErrorState.jsx';
 
 export const Confirmation = () => {
@@ -19,6 +24,8 @@ export const Confirmation = () => {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,6 +53,25 @@ export const Confirmation = () => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleConfirmCancel = async () => {
+    setCancelling(true);
+    try {
+      const res = await bookingsApi.cancelBooking(bookingId);
+      const updated = res?.data || res;
+      toast.success('Booking cancelled. 100% refund initiated to your account.');
+      setTicket((prev) => ({
+        ...prev,
+        ...updated,
+        status: 'CANCELLED',
+      }));
+      setCancelModalOpen(false);
+    } catch (err) {
+      toast.error(err?.message || 'Failed to cancel booking.');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   // Format date and time
@@ -93,6 +119,16 @@ export const Confirmation = () => {
   const qrImage = ticket.qrDataUrl || ticket.qrCode;
   const paymentId = ticket.razorpay?.paymentId || ticket.payment?.paymentId;
 
+  // Case-insensitive status checks
+  const statusUpper = String(ticket.status || '').toUpperCase();
+  const isConfirmed = statusUpper === 'CONFIRMED';
+  const isCancelled = statusUpper === 'CANCELLED';
+
+  // 24-hour cancellation window check
+  const showTime = new Date(snapshot.startTime).getTime();
+  const isWithinCutoff = showTime - Date.now() <= 24 * 60 * 60 * 1000;
+  const canCancel = isConfirmed && !isWithinCutoff;
+
   return (
     <>
       {/* Print Stylesheet: Isolates #printable-ticket only (Spec C6) */}
@@ -119,20 +155,52 @@ export const Confirmation = () => {
 
       <div className="min-h-screen bg-gray-50 py-10 pb-20">
         <div className="container mx-auto px-4 sm:px-6 max-w-2xl space-y-8">
-          {/* 1. Celebratory Success Banner */}
+          {/* 1. Header Banner */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
-              <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
-                Booking Confirmed!
-              </h1>
-              <p className="text-xs sm:text-sm text-muted mt-1 max-w-md">
-                Your tickets are locked and ready. A confirmation has been stored in your account history.
-              </p>
-            </div>
+            {isCancelled ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-red-100 text-danger flex items-center justify-center shadow-xs">
+                  <XCircle className="w-9 h-9 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
+                    Booking Cancelled
+                  </h1>
+                  <p className="text-xs sm:text-sm text-muted mt-1 max-w-md">
+                    100% refund of ₹{ticket.amount} has been initiated to your original payment method.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                  <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
+                    Booking Confirmed!
+                  </h1>
+                  <p className="text-xs sm:text-sm text-muted mt-1 max-w-md">
+                    Your tickets are locked and ready. A confirmation has been stored in your account history.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
+
+          {/* Cancellation Policy Banner */}
+          {isConfirmed && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800 flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>
+                  {canCancel
+                    ? 'Free cancellation available up to 24 hours before showtime (100% instant refund).'
+                    : 'Cancellation window closed (showtime is within 24 hours).'}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* 2. Authentic Ticket Card with Perforated Tear-Line */}
           <div
@@ -224,7 +292,7 @@ export const Confirmation = () => {
             <div className="p-6 sm:p-8 bg-gray-50/70 flex flex-col sm:flex-row items-center justify-between gap-6">
               {/* QR Code */}
               <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
-                {qrImage ? (
+                {qrImage && !isCancelled ? (
                   <div className="w-32 h-32 p-1.5 bg-white border border-border rounded-md shadow-xs flex items-center justify-center">
                     <img
                       src={qrImage}
@@ -233,12 +301,13 @@ export const Confirmation = () => {
                     />
                   </div>
                 ) : (
-                  <div className="w-32 h-32 bg-gray-200 rounded-md flex items-center justify-center">
-                    <QrCode className="w-12 h-12 text-muted opacity-40" />
+                  <div className="w-32 h-32 bg-gray-200 rounded-md flex flex-col items-center justify-center text-muted">
+                    <QrCode className="w-12 h-12 opacity-30" />
+                    {isCancelled && <span className="text-[10px] font-bold text-danger mt-1">VOID</span>}
                   </div>
                 )}
                 <span className="text-[10px] text-muted font-medium pt-1">
-                  Scan at theatre gate for seamless entry
+                  {isCancelled ? 'Ticket has been cancelled and voided' : 'Scan at theatre gate for seamless entry'}
                 </span>
               </div>
 
@@ -260,7 +329,15 @@ export const Confirmation = () => {
                 )}
                 <div>
                   <span className="text-muted">Status:</span>
-                  <span className="ml-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] uppercase">
+                  <span
+                    className={`ml-1.5 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase ${
+                      isConfirmed
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : isCancelled
+                        ? 'bg-red-100 text-danger'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
                     {ticket.status}
                   </span>
                 </div>
@@ -270,15 +347,40 @@ export const Confirmation = () => {
 
           {/* 3. Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handlePrint}
-              className="gap-2 font-bold px-6 shadow-md"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Ticket</span>
-            </Button>
+            {!isCancelled && (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handlePrint}
+                className="gap-2 font-bold px-6 shadow-md"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print Ticket</span>
+              </Button>
+            )}
+
+            {/* Cancel Booking Button - Visibly accessible directly on ticket page */}
+            {isConfirmed && (
+              <Button
+                variant={canCancel ? 'danger' : 'outline'}
+                size="lg"
+                onClick={() => setCancelModalOpen(true)}
+                disabled={!canCancel}
+                className={`gap-2 font-bold px-6 shadow-md ${
+                  canCancel
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'text-gray-400 border-gray-300 cursor-not-allowed opacity-75'
+                }`}
+                title={
+                  !canCancel
+                    ? 'Cancellations only allowed up to 24 hours before showtime.'
+                    : 'Cancel this booking and receive a full 100% refund'
+                }
+              >
+                <XCircle className="w-4 h-4" />
+                <span>{canCancel ? 'Cancel Booking' : 'Non-Refundable (< 24h)'}</span>
+              </Button>
+            )}
 
             <Link to="/my-bookings">
               <Button variant="secondary" size="lg" className="gap-2">
@@ -296,6 +398,68 @@ export const Confirmation = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancellation Confirmation Modal */}
+      <Modal
+        isOpen={cancelModalOpen}
+        onClose={() => setCancelModalOpen(false)}
+        title="Cancel Booking?"
+        maxWidth="max-w-md"
+      >
+        <div className="py-2 space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 text-xs text-red-800 space-y-1">
+            <p className="font-bold">Refund Policy Notice:</p>
+            <p>
+              100% of <span className="font-bold">₹{ticket.amount}</span> will be refunded to your original payment method within 5-7 working days via Razorpay. Cancellations are permitted up to 24 hours before showtime.
+            </p>
+          </div>
+
+          <div className="text-xs space-y-1 text-ink">
+            <p>
+              <span className="text-muted">Movie: </span>
+              <span className="font-bold">{snapshot.movieTitle}</span>
+            </p>
+            <p>
+              <span className="text-muted">Booking Reference: </span>
+              <span className="font-mono font-bold">{ticket.bookingRef}</span>
+            </p>
+            <p>
+              <span className="text-muted">Showtime: </span>
+              <span>{formatDateTime(snapshot.startTime)}</span>
+            </p>
+            <p>
+              <span className="text-muted">Seats: </span>
+              <span className="font-mono font-bold text-primary">{seatsList}</span>
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setCancelModalOpen(false)}
+              disabled={cancelling}
+            >
+              Keep Booking
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1 font-bold bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleConfirmCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <div className="flex items-center gap-1.5 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Cancelling...</span>
+                </div>
+              ) : (
+                <span>Confirm Cancel</span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
